@@ -1,0 +1,3 @@
+[submodule "cmd/mist/assets/ext/elementrem.js"]
+	path = cmd/mist/assets/ext/elementrem.js
+	url = https://github.com/elementrem/web3.js

@@ -1,0 +1,17 @@
+include setup.py
+
+# C sources
+include src/libelhash/internal.c
+include src/libelhash/sha3.c
+include src/libelhash/util.c
+include src/python/core.c
+
+# Headers
+include src/libelhash/compiler.h
+include src/libelhash/data_sizes.h
+include src/libelhash/endian.h
+include src/libelhash/elhash.h
+include src/libelhash/fnv.h
+include src/libelhash/internal.h
+include src/libelhash/sha3.h
+include src/libelhash/util.h
