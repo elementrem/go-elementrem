@@ -1,5 +1,6 @@
-* [Please note `web3.js` document with the `gele console` commands and instructions. Use web3.js document to see all the command displayed on the current page.](/web3.js/web3_document.md)    
+* [Please note `web3.js` document with the `gele console` commands and instructions. Use web3.js document to see all the command displayed on the current page.](https://github.com/elementrem/web3.js/blob/master/web3_document.md)    
 
+* [gele command line option list](command_line_option.md)
 #### gele console command list 1
 
 [admin](#admin)                         | [debug](#debug)                           |[ele](#ele)               |[ele](#ele)         |
@@ -35,16 +36,16 @@ setUrlHint                              | [stopCPUProfile](#debugstopcpuprofile)
 
 #### gele console command list 2
 
- miner        | [net](#net)                 |[personal](#personal)                    | [txpool](#txpool)        |[web3.version](#web3version)|
+ [miner](miner.md)        | [net](#net)                 |[personal](#personal)                    | [txpool](#txpool)        |[web3.version](#web3version)|
 ------------  | ------------- | ------------| -------------                           | -------------            | ------------   |
-makeDAG       |[listening](#netlistening)   |[listAccounts](#personallistaccounts)    |[content](#txpoolcontent) |[api](#web3version) 
+[makeDAG](miner.md)       |[listening](#netlistening)   |[listAccounts](#personallistaccounts)    |[content](#txpoolcontent) |[api](#web3version) 
 setElementbase|[peerCount](#netpeercount)   |getListAccounts                          |[inspect](#txpoolinspect) |[elementrem](#web3version)
-setExtra      |[version](#netversion)       |[importRawKey](#personalimportrawkey)    |[status](#txpoolstatus)   |[network](#web3version)     
-setGasPrice   |getListening                 |[lockAccount](#personallockaccount)      |getContent                |[node](#web3version)
-start         |getPeerCount                 |[newAccount](#personalnewaccount)        |getInspect                |[whisper](#web3version) 
-startAutoDAG  |getVersion                   |[signAndSendTransaction](#personalsignandsendtransaction)|getStatus |getElementrem 
-stop          |                             |[unlockAccount](#personalunlockaccount)  |                          |getNetwork
-stopAutoDAG   |                             |                                         |                          | getNode 
+[setExtra](miner.md)      |[version](#netversion)       |[importRawKey](#personalimportrawkey)    |[status](#txpoolstatus)   |[network](#web3version)     
+[setGasPrice](miner.md)   |getListening                 |[lockAccount](#personallockaccount)      |getContent                |[node](#web3version)
+[start](miner.md)         |getPeerCount                 |[newAccount](#personalnewaccount)        |getInspect                |[whisper](#web3version) 
+[startAutoDAG](miner.md)  |getVersion                   |[signAndSendTransaction](#personalsignandsendtransaction)|getStatus |getElementrem 
+[stop](miner.md)          |                             |[unlockAccount](#personalunlockaccount)  |                          |getNetwork
+[stopAutoDAG](miner.md)   |                             |                                         |                          | getNode 
 |||||getWhisper
 
 [web3.db](#web3db)   |[web3.currentProvider](#web3currentprovider)|[web3.providers](#web3providers)|[web3.shh](#web3shh)
