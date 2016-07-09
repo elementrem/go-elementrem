@@ -1,4 +1,4 @@
-* [Please note `web3.js` document with the `gele console` commands and instructions.](/web3.js/web3_document.md)    
+* [Please note `web3.js` document with the `gele console` commands and instructions. Use web3.js document to see all the command displayed on the current page.](/web3.js/web3_document.md)    
 
 #### gele console command list 1
 
