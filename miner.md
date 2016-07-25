@@ -10,7 +10,7 @@ Mac/Linux: `$(HOME)/.elhash/ `
 Windows: `c:/Users/(User Account)/AppData/Elhash/`    
 `> miner.stop()`    
     
-GPU miner is currently under construction.    
+### [GPU mining click Here](https://github.com/elementrem/webthree-umbrella/blob/master/GPU_mining_command.md)   
     
 ### miner.start   
 `miner.start(threadCount)`        
