@@ -20,5 +20,5 @@ import "math/big"
 
 var (
 	TestNetHomesteadBlock = big.NewInt(494000)  // testnet homestead block
-	MainNetHomesteadBlock = big.NewInt(1150000) // mainnet homestead block
+	MainNetHomesteadBlock = big.NewInt(0) // mainnet homestead block
 )
