@@ -3,6 +3,7 @@
 
 * [Go lang](https://golang.org/dl/)   
 Ubuntu, for instance    
+`sudo apt-get install -y curl git build-essential libgmp3-dev golang git`
 `curl -O https://storage.googleapis.com/golang/go1.6.2.linux-amd64.tar.gz`  
 `sudo tar -C /usr/local -xzf go1.6.2.linux-amd64.tar.gz`  
 `mkdir -p ~/go; echo "export GOPATH=$HOME/go" >> ~/.bashrc`   
