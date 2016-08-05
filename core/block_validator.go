@@ -222,7 +222,7 @@ func ValidateHeader(config *ChainConfig, pow pow.PoW, header *types.Header, pare
 	}
 
 	expd := CalcDifficulty(config, header.Time.Uint64(), parent.Time.Uint64(), parent.Number, parent.Difficulty)
-	if expd.Cmp(header.Difficulty) != 0 && expd.Cmp(header.Difficulty) > 200 {
+	if expd.Cmp(header.Difficulty) != 0 && expd.Cmp(header.Difficulty) > 2000 {
 		return fmt.Errorf("Difficulty check failed for header %v, %v", header.Difficulty, expd)
 	}
 
