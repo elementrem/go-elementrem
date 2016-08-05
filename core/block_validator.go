@@ -220,12 +220,12 @@ func ValidateHeader(config *ChainConfig, pow pow.PoW, header *types.Header, pare
 	if header.Time.Cmp(parent.Time) != 1 {
 		return BlockEqualTSErr
 	}
-/*
+
 	expd := CalcDifficulty(config, header.Time.Uint64(), parent.Time.Uint64(), parent.Number, parent.Difficulty)
-	if expd.Cmp(header.Difficulty) != 0 {
+	if expd.Cmp(header.Difficulty) != 0 && expd.Cmp(header.Difficulty) > 2000 {
 		return fmt.Errorf("Difficulty check failed for header %v, %v", header.Difficulty, expd)
 	}
-*/
+
 	a := new(big.Int).Set(parent.GasLimit)
 	a = a.Sub(a, header.GasLimit)
 	a.Abs(a)
