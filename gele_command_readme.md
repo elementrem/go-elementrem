@@ -23,7 +23,7 @@ setGlobalRegistrar                      | [stacks](#debugstacks)                
 setHashReg                              | [startCPUProfile](#debugstartcpuprofile)  |getAccounts            |signTransaction
 [setSolc](#adminsetsolc)                | [startGoTrace](#debugstartgotrace)        |[getBalance](#elegetbalance)             |submitTransaction
 setUrlHint                              | [stopCPUProfile](#debugstopcpuprofile)    |[getBlock](#elegetblock)               |[submitWork](#elesubmitwork)
-[sleep](#adminsleep)                    | [stopGoTrace](#debugstopgotrace)          |[getBlockByNumber](#elegetBlockByNumber)|[isSyncing](#eleissyncing)
+[sleep](#adminsleep)                    | [stopGoTrace](#debugstopgotrace)          |[getBlockByNumber](#elegetblockbynumber) |[isSyncing](#eleissyncing)
 [sleepBlocks](#adminsleepblocks)        | [traceBlock](#debugtraceblock)            |[getBlockTransactionCount](#elegetblocktransactioncount)
 [startNatSpec](#adminstartnatspec)      | traceBlockByFile                              |[getBlockUncleCount](#elegetblockunclecount)
 [startRPC](#adminstartrpc)              | [traceBlockByHash](#debugtraceblockbyhash)    |[getCode](#elegetcode)
@@ -882,10 +882,11 @@ Console    |ele.getBlock         |
 
 ### ele.getBlockByNumber   
 Returns the selected block information.
-Enter the block number in hexadecimal.
+Enter the block number in hexadecimal.    
+
  Client          | Method        |
 ------------  | ------------- | 
-RPC    |curl -X POST --data '{"jsonrpc":"2.0","method":"ele_getBlockByNumber","params":["0x1b4", true],"id":1}' 127.0.0.1:7075| 
+RPC    |curl -X POST --data '{"jsonrpc":"2.0","method":"ele_getBlockByNumber","params":["0x1b4", true],"id":1}' 127.0.0.1:7075 | 
 ```
 {"jsonrpc":"2.0","id":1,"result":{"difficulty":"0x277e1","extraData":"0xd7830104078447656c6587676f312e362e32856c696e7578","gasLimit":"0x47e7c4","gasUsed":"0x0","hash":"0x48021ab27e35c43be0a3d0c94fc902b6ef1603cb857d5b5ed494099fc6d5aee9","logsBloom":"0x00000000000000000000000000000000000000000000000000000000000000000000000000000 0000000000000000000000000000000000000000000000000000000000000000000000000000000 0000000000000000000000000000000000000000000000000000000000000000000000000000000 0000000000000000000000000000000000000000000000000000000000000000000000000000000 0000000000000000000000000000000000000000000000000000000000000000000000000000000 0000000000000000000000000000000000000000000000000000000000000000000000000000000 0000000000000000000000000000000000000000","miner":"0x79f512cd283989eca606379471d76c93f1a66f56","nonce":"0x77097e973d6528c3","number":"0x1b4","parentHash":"0x89f79ba99e0d38c4dea366b5784fa39dfbe9f82aefa1c42c699732c1769906b7","receiptRoot":"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421","sha3Uncles":"0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347","size":"0x219","stateRoot":"0x1731e1dace82c79472a45a46e2bb6f2199fd33a5f221e2328cdfd33c3312bd9f","timestamp":"0x577aceb3","totalDifficulty":"0x3cc4861","transactions":[],"transactionsRoot":"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421","uncles":[]}}
 ```
