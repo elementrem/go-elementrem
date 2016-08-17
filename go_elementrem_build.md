@@ -1,4 +1,8 @@
 ### To build from source	
+
+***As a general rule, Do not lose your password and keystore file. In any case, recovery is impossible.***
+***And it doesn't collect any personally identifiable information.***
+
 **Prerequisite**
 
 * [Go lang](https://golang.org/dl/)   
