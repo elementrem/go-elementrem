@@ -1,7 +1,13 @@
 * [Please note `web3.js` document with the `gele console` commands and instructions. Use web3.js document to see all the command displayed on the current page.](https://github.com/elementrem/web3.js/blob/master/web3_document.md)    
 
 * [gele command line option list](command_line_option.md)
+
+By default, `gele --rpc`is only available `ele,net,web3`. To enable other RPC, use the `--rpcapi`   
+example - RPC `admin` & `personal` commands : gele must begin with `--rpc --rpcpi "admin,personal"`
+
 #### gele console command list 1
+
+
 
 [admin](#admin)                         | [debug](#debug)                           |[ele](#ele)               |[ele](#ele)         |
 ------------                            | -------------                             |     -------------     | -------------     |
@@ -9,7 +15,7 @@
 [nodeInfo](#adminnodeinfo)              | [blockProfile](#debugblockprofile)        |[blockNumber](#eleblocknumber)|getStorageAt
 [peers](#adminpeers)                    | [chaindbProperty](#debugcpuprofile)       |[coinbase](#elecoinbase)               |getSyncing
 [addPeer](#adminaddpeer)                | [cpuProfile](#debugcpuprofile)            |compile                |getTransaction
-[exportChain](#adminexportchain)       | [dumpBlock](#debugdumpblock)              |defaultAccount         |[getTransactionCount](#elegettransactioncount)
+[exportChain](#adminexportchain)         | [dumpBlock](#debugdumpblock)              |defaultAccount         |[getTransactionCount](#elegettransactioncount)
 [getContractInfo](#admingetcontractinfo)| [gcStats](#debuggcstats)                  |defaultBlock           |[getTransactionFromBlock](#elegettransactionfromblock)
 getDatadir                              | [getBlockRlp](#debuggetblockrlp)          |[gasPrice](#elegasprice)               |[getTransactionReceipt](#elegettransactionreceipt)
 getNodeInfo                             | [goTrace](#debuggotrace)                  |[hashrate](#elehashrate)               |getUncle|isSyncing
@@ -87,11 +93,14 @@ The datadir administrative property can be queried for the absolute path the run
  Client          | Method        |
 ------------  | ------------- | 
 Console    |admin.datadir        |   
+RPC | curl -X POST --data '{"jsonrpc":"2.0","method":"admin_datadir","params":[],"id":67}' 127.0.0.1:7075|
 
 ```bash
 - Example   
 >admin.datadir    
 "/home/ubuntu/.elementrem"   
+//
+{"jsonrpc":"2.0","id":67,"result":"/home/chain/.elementrem"}
 ```
 * [Back to Top](#gele-console-command-list-1)   
 
@@ -101,6 +110,7 @@ The admin exposes the methods to manage, control or monitor your node.
  Client          | Method        |
 ------------  | ------------- | 
 Console    |admin.nodeInfo        |   
+RPC| curl -X POST --data '{"jsonrpc":"2.0","method":"admin_nodeInfo","params":[],"id":67}' 127.0.0.1:7075|
 
 ```bash
 - Example   
@@ -123,7 +133,9 @@ Console    |admin.nodeInfo        |
       network: 73733
     }
   }
-}  
+} 
+//
+{"jsonrpc":"2.0","id":67,"result":{"id":"3a14bd2ab5d08e95b449f01742b96b76217be87624d2ecdc056b2c3f793270c9306e79fd0e57ae70b36566cd769962b08cb2ff2d6911ce2671e4623201bfdacd","name":"Gele/v1 ........
 ```
 * [Back to Top](#gele-console-command-list-1)   
 
@@ -133,6 +145,7 @@ The peers administrative property can be queried for all the information known a
  Client          | Method        |
 ------------  | ------------- | 
 Console    |admin.peers       |   
+RPC|curl -X POST --data '{"jsonrpc":"2.0","method":"admin_peers","params":[],"id":67}' 127.0.0.1:7075|
 
 ```bash
 - Example   
@@ -168,6 +181,8 @@ Console    |admin.peers       |
       }
     }
 }, 
+//
+{"jsonrpc":"2.0","id":67,"result":[{"id":"0fa42ff578be257f5e66e19aa5b0d532789daf93437802e234fca66e70de3f6e70c5c0fc7e4971e22fc02ec3cfec5d7662492b297012cd95524df597c7d13407","name":"Gele/v1.4.10-stable-e69 .......
 ```
 * [Back to Top](#gele-console-command-list-1) 
 
@@ -177,10 +192,13 @@ Pass a nodeURL to connect a to a peer on the network. The nodeURL needs to be in
  Client          | Method        |
 ------------  | ------------- | 
 Console    |admin.addPeer      |   
+RPC|curl -X POST --data '{"jsonrpc":"2.0","method":"admin_addPeer","params":["enode://a24a2....cb4c93@00.00.00.00:30707"],"id":1}' 127.0.0.1:7075
 
 ```bash
 - Example   
 > admin.addPeer("enode://d2b05122f4ef26cce1a44450903cdab898928ebbb29b5ca85ecd2ecf7689207a7e8a75bceb8f57dde9a92315343cb357c092f2fffd56f11755818aea23394ec0@00.00.00.00:30707")
+true
+//
 true
 ```
 * [Back to Top](#gele-console-command-list-1) 
@@ -199,6 +217,8 @@ true
 //
 {"jsonrpc":"2.0","id":67,"result":true}
 ```
+
+* [Back to Top](#gele-console-command-list-1) 
 
 ### admin.getContractInfo
 this will retrieve the contract info json for a contract on the address   
@@ -276,6 +296,7 @@ Set the solidity compiler
  Client          | Method        |
 ------------  | ------------- | 
 Console    |admin.setSolc    |   
+RPC|curl -X POST --data '{"jsonrpc":"2.0","method":"admin_setSolc","params":["/usr/bin/solc"],"id":67}' 127.0.0.1:7075|
 
 ```bash
 - Example   
@@ -283,6 +304,8 @@ admin.setSolc('/some/path/solc')
 'solc v0.9.29
 Solidity Compiler: /some/path/solc
 '
+//
+{"jsonrpc":"2.0","id":67,"result":"solc, the solidity compiler commandline interface\nVersion: 0.3.6-0/None-Linux/g++\n\npath: /usr/bin/solc"}
 ```
 * [Back to Top](#gele-console-command-list-1) 
 
@@ -324,11 +347,11 @@ The startRPC administrative method starts an HTTP based JSON RPC API webserver t
 
  Client          | Method        |
 ------------  | ------------- | 
-Console    |admin.startRPC    |   
+Console    |web3.admin.startRPC    |   
 
 ```bash
 - Example   
-> admin.startRPC("127.0.0.1", 7075)
+> web3.admin.startRPC()
 true
 ```
 * [Back to Top](#gele-console-command-list-1) 
@@ -343,7 +366,7 @@ The startWS administrative method starts an WebSocket based JSON RPC API webserv
 
  Client          | Method        |
 ------------  | ------------- | 
-Console    |admin.startRPC    |   
+Console    |web3.admin.startWS   |   
 
 ```bash
 - Example   
@@ -357,7 +380,7 @@ deactivate NatSpec: when sending a transaction, the user will be prompted with a
 
  Client          | Method        |
 ------------  | ------------- | 
-Console    |admin.stopNatSpec()    |   
+Console    |web3.admin.stopNatSpec()    |   
 
 * [Back to Top](#gele-console-command-list-1) 
 
@@ -367,7 +390,7 @@ Stops the HTTP server for the JSON-RPC.
 
  Client          | Method        |
 ------------  | ------------- | 
-Console    |admin.stopRPC()    |   
+Console    |web3.admin.stopRPC()    |   
 
 * [Back to Top](#gele-console-command-list-1) 
 
