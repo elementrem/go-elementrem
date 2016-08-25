@@ -9,7 +9,7 @@
 [nodeInfo](#adminnodeinfo)              | [blockProfile](#debugblockprofile)        |[blockNumber](#eleblocknumber)|getStorageAt
 [peers](#adminpeers)                    | [chaindbProperty](#debugcpuprofile)       |[coinbase](#elecoinbase)               |getSyncing
 [addPeer](#adminaddpeer)                | [cpuProfile](#debugcpuprofile)            |compile                |getTransaction
-exportChain                             | [dumpBlock](#debugdumpblock)              |defaultAccount         |[getTransactionCount](#elegettransactioncount)
+[exportChain](#adminexportchain)       | [dumpBlock](#debugdumpblock)              |defaultAccount         |[getTransactionCount](#elegettransactioncount)
 [getContractInfo](#admingetcontractinfo)| [gcStats](#debuggcstats)                  |defaultBlock           |[getTransactionFromBlock](#elegettransactionfromblock)
 getDatadir                              | [getBlockRlp](#debuggetblockrlp)          |[gasPrice](#elegasprice)               |[getTransactionReceipt](#elegettransactionreceipt)
 getNodeInfo                             | [goTrace](#debuggotrace)                  |[hashrate](#elehashrate)               |getUncle|isSyncing
@@ -184,6 +184,21 @@ Console    |admin.addPeer      |
 true
 ```
 * [Back to Top](#gele-console-command-list-1) 
+
+### admin.exportChain
+Exports the blockchain to the given file in binary format. It is output to the gele path.
+
+ Client          | Method        |
+------------  | ------------- | 
+Console    |admin.exportChain("filename")      |
+RPC|curl -X POST --data '{"jsonrpc":"2.0","method":"admin_exportChain","params":["filename"],"id":67}' 127.0.0.1:7075|
+
+```bash
+> admin.exportChain("chaindata")
+true
+//
+{"jsonrpc":"2.0","id":67,"result":true}
+```
 
 ### admin.getContractInfo
 this will retrieve the contract info json for a contract on the address   
