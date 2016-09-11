@@ -501,7 +501,8 @@ func (d *Downloader) fetchHeight(p *peer) (*types.Header, error) {
 	glog.V(logger.Debug).Infof("%v: retrieving remote chain height", p)
 
 	// Request the advertised remote head block and wait for the response
-	go p.getRelHeaders(p.head, 1, 0, false)
+	head, _ := p.currentHead()
+	go p.getRelHeaders(head, 1, 0, false)
 
 	timeout := time.After(d.requestTTL())
 	for {
