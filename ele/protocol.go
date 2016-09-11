@@ -36,10 +36,10 @@ const (
 var ProtocolName = "ele"
 
 // Supported versions of the ele protocol (first is primary).
-var ProtocolVersions = []uint{ele63, ele62, ele61}
+var ProtocolVersions = []uint{ele63, ele62,}
 
 // Number of implemented message corresponding to different protocol versions.
-var ProtocolLengths = []uint64{17, 8, 9}
+var ProtocolLengths = []uint64{17, 8}
 
 const (
 	NetworkId          = 73733

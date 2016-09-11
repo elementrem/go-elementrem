@@ -653,8 +653,8 @@ func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
 	// Otherwise if the block is indeed in out own chain, announce it
 	if pm.blockchain.HasBlock(hash) {
 		for _, peer := range peers {
-			if peer.version < ele62 {
 			peer.SendNewBlockHashes([]common.Hash{hash}, []uint64{block.NumberU64()})
+		}
 		glog.V(logger.Detail).Infof("announced block %x to %d peers in %v", hash[:4], len(peers), time.Since(block.ReceivedAt))
 	}
 }
