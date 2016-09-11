@@ -3,7 +3,7 @@
 # don't need to bother with make.
 
 .PHONY: gele gele-cross evm all test clean
-.PHONY: gele-linux gele-linux-386 gele-linux-amd64
+.PHONY: gele-linux gele-linux-386 gele-linux-amd64 gele-linux-mips64 gele-linux-mips64le
 .PHONY: gele-linux-arm gele-linux-arm-5 gele-linux-arm-6 gele-linux-arm-7 gele-linux-arm64
 .PHONY: gele-darwin gele-darwin-386 gele-darwin-amd64
 .PHONY: gele-windows gele-windows-386 gele-windows-amd64
@@ -37,7 +37,7 @@ gele-cross: gele-linux gele-darwin gele-windows gele-android gele-ios
 	@echo "Full cross compilation done:"
 	@ls -ld $(GOBIN)/gele-*
 
-gele-linux: gele-linux-386 gele-linux-amd64 gele-linux-arm
+gele-linux: gele-linux-386 gele-linux-amd64 gele-linux-arm gele-linux-mips64 gele-linux-mips64le
 	@echo "Linux cross compilation done:"
 	@ls -ld $(GOBIN)/gele-linux-*
 
@@ -74,6 +74,16 @@ gele-linux-arm64:
 	build/env.sh go run build/ci.go xgo --go=$(GO) --dest=$(GOBIN) --targets=linux/arm64 -v ./cmd/gele
 	@echo "Linux ARM64 cross compilation done:"
 	@ls -ld $(GOBIN)/gele-linux-* | grep arm64
+	
+gele-linux-mips64:
+	build/env.sh go run build/ci.go xgo --go=$(GO) --dest=$(GOBIN) --targets=linux/mips64 -v ./cmd/gele
+	@echo "Linux MIPS64 cross compilation done:"
+	@ls -ld $(GOBIN)/gele-linux-* | grep mips64
+
+gele-linux-mips64le:
+	build/env.sh go run build/ci.go xgo --go=$(GO) --dest=$(GOBIN) --targets=linux/mips64le -v ./cmd/gele
+	@echo "Linux MIPS64le cross compilation done:"
+	@ls -ld $(GOBIN)/gele-linux-* | grep mips64le
 
 gele-darwin: gele-darwin-386 gele-darwin-amd64
 	@echo "Darwin cross compilation done:"
