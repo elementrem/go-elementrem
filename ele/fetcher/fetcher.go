@@ -379,7 +379,7 @@ func (f *Fetcher) loop() {
 					}
 				}
 			}
-			// Send out all block (ele/61) or header (ele/62) requests
+			// Send out all block header requests
 			for peer, hashes := range request {
 				if glog.V(logger.Detail) && len(hashes) > 0 {
 					list := "["
