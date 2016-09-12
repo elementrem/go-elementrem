@@ -23,16 +23,6 @@ import (
 )
 
 var (
-	hashInMeter      = metrics.NewMeter("ele/downloader/hashes/in")
-	hashReqTimer     = metrics.NewTimer("ele/downloader/hashes/req")
-	hashDropMeter    = metrics.NewMeter("ele/downloader/hashes/drop")
-	hashTimeoutMeter = metrics.NewMeter("ele/downloader/hashes/timeout")
-
-	blockInMeter      = metrics.NewMeter("ele/downloader/blocks/in")
-	blockReqTimer     = metrics.NewTimer("ele/downloader/blocks/req")
-	blockDropMeter    = metrics.NewMeter("ele/downloader/blocks/drop")
-	blockTimeoutMeter = metrics.NewMeter("ele/downloader/blocks/timeout")
-
 	headerInMeter      = metrics.NewMeter("ele/downloader/headers/in")
 	headerReqTimer     = metrics.NewTimer("ele/downloader/headers/req")
 	headerDropMeter    = metrics.NewMeter("ele/downloader/headers/drop")

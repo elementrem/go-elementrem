@@ -257,7 +257,7 @@ static bool elhash_hash(
 void elhash_quick_hash(
 	elhash_h256_t* return_hash,
 	elhash_h256_t const* header_hash,
-	uint64_t const nonce,
+	uint64_t nonce,
 	elhash_h256_t const* mix_hash
 )
 {
