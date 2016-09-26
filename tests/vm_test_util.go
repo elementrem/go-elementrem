@@ -103,7 +103,7 @@ func benchVmTest(test VmTest, env map[string]string, b *testing.B) {
 	db, _ := eledb.NewMemDatabase()
 	statedb, _ := state.New(common.Hash{}, db)
 	for addr, account := range test.Pre {
-		obj := StateObjectFromAccount(db, addr, account)
+		obj := StateObjectFromAccount(db, addr, account, statedb.MarkStateObjectDirty)
 		statedb.SetStateObject(obj)
 		for a, v := range account.Storage {
 			obj.SetState(common.HexToHash(a), common.HexToHash(v))
@@ -154,7 +154,7 @@ func runVmTest(test VmTest) error {
 	db, _ := eledb.NewMemDatabase()
 	statedb, _ := state.New(common.Hash{}, db)
 	for addr, account := range test.Pre {
-		obj := StateObjectFromAccount(db, addr, account)
+		obj := StateObjectFromAccount(db, addr, account, statedb.MarkStateObjectDirty)
 		statedb.SetStateObject(obj)
 		for a, v := range account.Storage {
 			obj.SetState(common.HexToHash(a), common.HexToHash(v))
@@ -207,7 +207,7 @@ func runVmTest(test VmTest) error {
 		}
 
 		for addr, value := range account.Storage {
-			v := obj.GetState(common.HexToHash(addr))
+			v := statedb.GetState(obj.Address(), common.HexToHash(addr))
 			vexp := common.HexToHash(value)
 
 			if v != vexp {
