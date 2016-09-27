@@ -59,10 +59,8 @@ import (
 
   References mentioned in code comments:
 
-  1. https://github.com/elementrem/wiki/wiki/Elhash
-  2. https://github.com/elementrem/cpp-elementrem/blob/develop/libelhash-cl/elhash_cl_miner.cpp
-  3. https://www.khronos.org/registry/cl/sdk/1.2/docs/man/xhtml/
-  4. http://amd-dev.wpengine.netdna-cdn.com/wordpress/media/2013/12/AMD_OpenCL_Programming_User_Guide.pdf
+  1. https://www.khronos.org/registry/cl/sdk/1.2/docs/man/xhtml/
+  2. http://amd-dev.wpengine.netdna-cdn.com/wordpress/media/2013/12/AMD_OpenCL_Programming_User_Guide.pdf
 
 */
 

@@ -45,6 +45,10 @@ const (
 	estHeaderRlpSize  = 500             // Approximate size of an RLP encoded block header
 )
 
+var (
+	interstellarChallengeTimeout = 15 * time.Second // Time allowance for a node to reply to the INTERSTELLAR handshake challenge
+)
+
 // errIncompatibleConfig is returned if the requested protocols and configs are
 // not compatible (low protocol version restrictions and high requirements).
 var errIncompatibleConfig = errors.New("incompatible configuration")
@@ -59,9 +63,10 @@ type ProtocolManager struct {
 	fastSync uint32 // Flag whether fast sync is enabled (gets disabled if we already have blocks)
 	synced   uint32 // Flag whether we're considered synchronised (enables transaction processing)
 
-	txpool     txPool
-	blockchain *core.BlockChain
-	chaindb    eledb.Database
+	txpool      txPool
+	blockchain  *core.BlockChain
+	chaindb     eledb.Database
+	chainconfig *core.ChainConfig
 
 	downloader *downloader.Downloader
 	fetcher    *fetcher.Fetcher
@@ -96,6 +101,7 @@ func NewProtocolManager(config *core.ChainConfig, fastSync bool, networkId int, 
 		txpool:      txpool,
 		blockchain:  blockchain,
 		chaindb:     chaindb,
+		chainconfig: config,
 		peers:       newPeerSet(),
 		newPeerCh:   make(chan *peer),
 		noMorePeers: make(chan struct{}),
@@ -166,7 +172,7 @@ func NewProtocolManager(config *core.ChainConfig, fastSync bool, networkId int, 
 	}
 	manager.fetcher = fetcher.New(blockchain.GetBlock, validator, manager.BroadcastBlock, heighter, inserter, manager.removePeer)
 
-	if blockchain.Genesis().Hash().Hex() == defaultGenesisHash && networkId == 1 {
+	if blockchain.Genesis().Hash().Hex() == defaultGenesisHash && networkId == 73733 {
 		glog.V(logger.Debug).Infoln("Bad Block Reporting is enabled")
 		manager.badBlockReportingEnabled = true
 	}
@@ -273,6 +279,25 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// after this will be sent via broadcasts.
 	pm.syncTransactions(p)
 
+	// If we're INTERSTELLAR hyperz-leap aware, validate any remote peer with regard to the hard-fork
+	if interstellarBlock := pm.chainconfig.INTERSTELLARleapBlock; interstellarBlock != nil {
+		// Request the peer's INTERSTELLAR fork header for extra-data validation
+		if err := p.RequestHeadersByNumber(interstellarBlock.Uint64(), 1, 0, false); err != nil {
+			return err
+		}
+		// Start a timer to disconnect if the peer doesn't reply in time
+		p.forkDrop = time.AfterFunc(interstellarChallengeTimeout, func() {
+			glog.V(logger.Warn).Infof("%v: timed out INTERSTELLAR fork-check, dropping", p)
+			pm.removePeer(p.id)
+		})
+		// Make sure it's cleaned up if the peer dies off
+		defer func() {
+			if p.forkDrop != nil {
+				p.forkDrop.Stop()
+				p.forkDrop = nil
+			}
+		}()
+	}
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
@@ -374,9 +399,44 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err := msg.Decode(&headers); err != nil {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
+		// If no headers were received, but we're expending a INTERSTELLAR fork check, maybe it's that
+		if len(headers) == 0 && p.forkDrop != nil {
+			// Possibly an empty reply to the fork header checks, sanity check TDs
+			verifyINTERSTELLAR := true
+
+			// If we already have a INTERSTELLAR header, we can check the peer's TD against it. If
+			// the peer's ahead of this, it too must have a reply to the INTERSTELLAR check
+			if interstellarHeader := pm.blockchain.GetHeaderByNumber(pm.chainconfig.INTERSTELLARleapBlock.Uint64()); interstellarHeader != nil {
+				if _, td := p.Head(); td.Cmp(pm.blockchain.GetTd(interstellarHeader.Hash())) >= 0 {
+					verifyINTERSTELLAR = false
+				}
+			}
+			// If we're seemingly on the same chain, disable the drop timer
+			if verifyINTERSTELLAR {
+				glog.V(logger.Debug).Infof("%v: seems to be on the same side of the INTERSTELLAR fork", p)
+				p.forkDrop.Stop()
+				p.forkDrop = nil
+				return nil
+			}
+		}
 		// Filter out any explicitly requested headers, deliver the rest to the downloader
 		filter := len(headers) == 1
 		if filter {
+			// If it's a potential INTERSTELLAR fork check, validate against the rules
+			if p.forkDrop != nil && pm.chainconfig.INTERSTELLARleapBlock.Cmp(headers[0].Number) == 0 {
+				// Disable the fork drop timer
+				p.forkDrop.Stop()
+				p.forkDrop = nil
+
+				// Validate the header and either drop the peer or continue
+				if err := core.ValidateINTERSTELLARHeaderExtraData(pm.chainconfig, headers[0]); err != nil {
+					glog.V(logger.Debug).Infof("%v: verified to be on the other side of the INTERSTELLAR fork, dropping", p)
+					return err
+				}
+				glog.V(logger.Debug).Infof("%v: verified to be on the same side of the INTERSTELLAR fork", p)
+				return nil
+			}
+			// Irrelevant of the fork checks, send the header to the fetcher just in case
 			headers = pm.fetcher.FilterHeaders(headers, time.Now())
 		}
 		if len(headers) > 0 || !filter {
@@ -580,7 +640,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 		// Mark the peer as owning the block and schedule it for import
 		p.MarkBlock(request.Block.Hash())
-
 		pm.fetcher.Enqueue(p.id, request.Block)
 
 		// Assuming the block is importable by the peer, but possibly not yet done so,
@@ -694,7 +753,7 @@ func (self *ProtocolManager) txBroadcastLoop() {
 // EleNodeInfo represents a short summary of the Elementrem sub-protocol metadata known
 // about the host peer.
 type EleNodeInfo struct {
-	Network    int         `json:"network"`    // Elementrem network ID (0=Olympic, 1=Frontier, 2=Morden)
+	Network    int         `json:"network"`    // Elementrem network ID
 	Difficulty *big.Int    `json:"difficulty"` // Total difficulty of the host's blockchain
 	Genesis    common.Hash `json:"genesis"`    // SHA3 hash of the host's genesis block
 	Head       common.Hash `json:"head"`       // SHA3 hash of the host's best owned block

@@ -122,7 +122,7 @@ type Config struct {
 type Server struct {
 	// Config fields may not be modified while the server is running.
 	Config
-	
+
 	// Hooks for testing. These are useful because we can inhibit
 	// the whole protocol stack.
 	newTransport func(net.Conn) transport

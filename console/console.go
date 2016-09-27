@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors
+// Copyright 2016 The go-elementrem Authors.
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -52,7 +52,7 @@ const DefaultPrompt = "> "
 type Config struct {
 	DataDir  string       // Data directory to store the console history at
 	DocRoot  string       // Filesystem path from where to load JavaScript files from
-	Client   rpc.Client   // RPC client to execute elementrem requests through
+	Client   rpc.Client   // RPC client to execute Elementrem requests through
 	Prompt   string       // Input prompt prefix string (defaults to DefaultPrompt)
 	Prompter UserPrompter // Input prompter to allow interactive user feedback (defaults to TerminalPrompter)
 	Printer  io.Writer    // Output writer to serialize any display strings to (defaults to os.Stdout)
@@ -63,7 +63,7 @@ type Config struct {
 // JavaScript console attached to a running node via an external or in-process RPC
 // client.
 type Console struct {
-	client   rpc.Client   // RPC client to execute elementrem requests through
+	client   rpc.Client   // RPC client to execute Elementrem requests through
 	jsre     *jsre.JSRE   // JavaScript runtime environment running the interpreter
 	prompt   string       // Input prompt prefix string
 	prompter UserPrompter // Input prompter to allow interactive user feedback
@@ -196,7 +196,7 @@ func (c *Console) init(preload []string) error {
 			c.prompter.SetHistory(nil)
 		} else {
 			c.history = strings.Split(string(content), "\n")
-			c.prompter.SetHistory(c.history)			
+			c.prompter.SetHistory(c.history)
 		}
 		c.prompter.SetWordCompleter(c.AutoCompleteInput)
 	}
@@ -245,7 +245,7 @@ func (c *Console) AutoCompleteInput(line string, pos int) (string, []string, str
 // console's available modules.
 func (c *Console) Welcome() {
 	// Print some generic Gele metadata
-	fmt.Fprintf(c.printer, "Gele JavaScript console.\n\n")
+	fmt.Fprintf(c.printer, "Elementrem Gele JavaScript console.\n\n")
 	c.jsre.Run(`
 		console.log("instance: " + web3.version.node);
 		console.log("coinbase: " + ele.coinbase);

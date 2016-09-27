@@ -49,7 +49,7 @@ type Node struct {
 	datadir  string         // Path to the currently used data directory
 	eventmux *event.TypeMux // Event multiplexer used between the services of a stack
 
-	serverConfig p2p.Config // v1.4.6--move network config out of server v1.4.5--Configuration of the underlying P2P networking layer
+	serverConfig p2p.Config
 	server       *p2p.Server // Currently running P2P networking layer
 
 	serviceFuncs []ServiceConstructor     // Service constructors (in dependency order)

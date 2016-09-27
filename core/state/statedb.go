@@ -45,13 +45,12 @@ type StateDB struct {
 
 	// This map caches canon state accounts.
 	all map[common.Address]Account
- 
+
 	// This map holds 'live' objects, which will get modified while processing a state transition.
 	stateObjects      map[common.Address]*StateObject
 	stateObjectsDirty map[common.Address]struct{}
 
 	// The refund counter, also used by state transitioning.
-
 	refund *big.Int
 
 	thash, bhash common.Hash
@@ -411,7 +410,7 @@ func (s *StateDB) IntermediateRoot() common.Hash {
 // won't be referenced again when called / queried up on.
 //
 // DeleteSuicides should not be used for consensus related updates
-// under any circumstances. v1.4.7
+// under any circumstances.
 func (s *StateDB) DeleteSuicides() {
 	// Reset refund so that any used-gas calculations can use
 	// this method.
@@ -473,6 +472,7 @@ func (s *StateDB) commit(dbw trie.DatabaseWriter) (root common.Hash, err error) 
 			}
 			// Update the object in the main account trie.
 			s.UpdateStateObject(stateObject)
+			s.all[addr] = stateObject.data
 		}
 		delete(s.stateObjectsDirty, addr)
 	}

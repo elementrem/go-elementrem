@@ -653,8 +653,6 @@ module.exports = SolidityTypeBytes;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var f = require('./formatters');
 
@@ -939,8 +937,6 @@ module.exports = SolidityTypeDynamicBytes;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var BigNumber = require('bignumber.js');
 var utils = require('../utils/utils');
@@ -1226,8 +1222,6 @@ module.exports = SolidityTypeInt;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var utils = require('../utils/utils');
 
@@ -1776,8 +1770,6 @@ if (typeof XMLHttpRequest === 'undefined') {
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
- */
 
 /**
  * Utils
@@ -1854,8 +1846,6 @@ module.exports = {
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var CryptoJS = require('crypto-js');
 var sha3 = require('crypto-js/sha3');
@@ -1891,8 +1881,6 @@ module.exports = function (value, options) {
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 /**
  * Utils
@@ -2492,8 +2480,6 @@ module.exports={
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var RequestManager = require('./web3/requestmanager');
 var Iban = require('./web3/iban');
@@ -2632,8 +2618,6 @@ module.exports = Web3;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var sha3 = require('../utils/sha3');
 var SolidityEvent = require('./event');
@@ -2719,8 +2703,6 @@ module.exports = AllSolidityEvents;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var Jsonrpc = require('./jsonrpc');
 var errors = require('./errors');
@@ -2784,8 +2766,6 @@ module.exports = Batch;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var utils = require('../utils/utils');
 var coder = require('../solidity/coder');
@@ -3081,8 +3061,6 @@ module.exports = ContractFactory;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 module.exports = {
     InvalidNumberOfParams: function () {
@@ -3118,8 +3096,6 @@ module.exports = {
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var utils = require('../utils/utils');
 var coder = require('../solidity/coder');
@@ -3375,8 +3351,6 @@ module.exports = extend;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
- */
 
 var formatters = require('./formatters');
 var utils = require('../utils/utils');
@@ -3600,8 +3574,6 @@ module.exports = Filter;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var utils = require('../utils/utils');
 var config = require('../utils/config');
@@ -3902,8 +3874,6 @@ module.exports = {
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var coder = require('../solidity/coder');
 var utils = require('../utils/utils');
@@ -4148,8 +4118,6 @@ module.exports = SolidityFunction;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
- */
 
 "use strict";
 
@@ -4291,8 +4259,6 @@ module.exports = HttpProvider;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var BigNumber = require('bignumber.js');
 
@@ -4517,8 +4483,6 @@ module.exports = Iban;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 "use strict";
 
@@ -4723,8 +4687,6 @@ module.exports = IpcProvider;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
- */
 
 var Jsonrpc = function () {
     // singleton pattern
@@ -4813,8 +4775,6 @@ module.exports = Jsonrpc;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var utils = require('../utils/utils');
 var errors = require('./errors');
@@ -4977,8 +4937,6 @@ module.exports = Method;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var Method = require('../method');
 
@@ -5042,8 +5000,6 @@ module.exports = DB;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 "use strict";
 
@@ -5383,8 +5339,6 @@ module.exports = Ele;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
- */
 
 var utils = require('../../utils/utils');
 var Property = require('../property');
@@ -5400,7 +5354,7 @@ var Net = function (web3) {
     });
 };
 
-/// @returns an array of objects describing web3.eth api properties
+/// @returns an array of objects describing web3.ele api properties
 var properties = function () {
     return [
         new Property({
@@ -5434,8 +5388,6 @@ module.exports = Net;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 "use strict";
 
@@ -5517,8 +5469,6 @@ module.exports = Personal;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
- */
 
 var Method = require('../method');
 var formatters = require('../formatters');
@@ -5602,8 +5552,6 @@ module.exports = Shh;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
- */
 
 var Method = require('../method');
 
@@ -5715,8 +5663,6 @@ module.exports = {
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var globalRegistrarAbi = require('../contracts/GlobalRegistrar.json');
 var icapRegistrarAbi= require('../contracts/ICAPRegistrar.json');
@@ -5753,8 +5699,6 @@ module.exports = {
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var utils = require('../utils/utils');
 
@@ -5895,8 +5839,6 @@ module.exports = Property;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var Jsonrpc = require('./jsonrpc');
 var utils = require('../utils/utils');
@@ -6166,8 +6108,6 @@ module.exports = Settings;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var formatters = require('./formatters');
 var utils = require('../utils/utils');
@@ -6258,8 +6198,6 @@ module.exports = IsSyncing;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var Iban = require('./iban');
 var exchangeAbi = require('../contracts/SmartExchange.json');
@@ -10422,7 +10360,7 @@ module.exports = transfer;
 	    - Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
 	    - Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
 
-	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHELEER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	*/
 
 	(function (Math) {
@@ -14527,7 +14465,7 @@ module.exports = transfer;
         }
 
 
-        // PROTOTYPE/INSTANCE MELEODS
+        // PROTOTYPE/INSTANCE METHODS
 
 
         /*

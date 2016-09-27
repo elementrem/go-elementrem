@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors
+// Copyright 2016 The go-elementrem Authors.
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -370,7 +370,7 @@ type debMetadata struct {
 func newDebMetadata(distro, author, buildnum string, unstable bool, t time.Time) debMetadata {
 	if author == "" {
 		// No signing key, use default author.
-		author = "Elementrem Builds"
+		author = "Elementrem <elementrem@elementrem.org>"
 	}
 	return debMetadata{
 		Unstable:    unstable,

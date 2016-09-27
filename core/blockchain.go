@@ -777,7 +777,7 @@ func (self *BlockChain) WriteBlock(block *types.Block) (status WriteStatus, err 
 
 	localTd := self.GetTd(self.currentBlock.Hash())
 	externTd := new(big.Int).Add(block.Difficulty(), ptd)
-	
+
 	// Irrelevant of the canonical status, write the block itself to the database
 	if err := self.hc.WriteTd(block.Hash(), externTd); err != nil {
 		glog.Fatalf("failed to write block total difficulty: %v", err)
@@ -896,7 +896,7 @@ func (self *BlockChain) InsertChain(chain types.Blocks) (int, error) {
 			err = self.stateCache.Reset(self.GetBlock(block.ParentHash()).Root())
 		default:
 			err = self.stateCache.Reset(chain[i-1].Root())
-		}		
+		}
 		if err != nil {
 			reportBlock(block, err)
 			return i, err

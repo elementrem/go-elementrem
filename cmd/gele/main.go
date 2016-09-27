@@ -50,7 +50,7 @@ const (
 	clientIdentifier = "Gele"   // Client identifier to advertise over the network
 	versionMajor     = 1        // Major version component of the current release
 	versionMinor     = 4        // Minor version component of the current release
-	versionPatch     = 12        // Patch version component of the current release
+	versionPatch     = 12       // Patch version component of the current release
 	versionMeta      = "stable" // Version metadata to append to the version string
 
 	versionOracle = "0x1a38d480bbd14caab0f8736345f81844d7d36abe" // Elementrem address of the Gele release oracle
@@ -149,7 +149,6 @@ participating.
 		utils.IdentityFlag,
 		utils.UnlockedAccountFlag,
 		utils.PasswordFileFlag,
-		utils.GenesisFileFlag,
 		utils.BootnodesFlag,
 		utils.DataDirFlag,
 		utils.KeyStoreDirFlag,
@@ -220,16 +219,10 @@ participating.
 		// This should be the only place where reporting is enabled
 		// because it is not intended to run while testing.
 		// In addition to this check, bad block reports are sent only
-		// for chains with the main network genesis block and network id 73733.
+		// for chains with the main network genesis block and network id 1.
 		ele.EnableBadBlockReporting = true
 
 		utils.SetupNetwork(ctx)
-
-		// Deprecation warning.
-		if ctx.GlobalIsSet(utils.GenesisFileFlag.Name) {
-			common.PrintDepricationWarning("--genesis is deprecated. Switch to use 'gele init /path/to/file'")
-		}
-
 		return nil
 	}
 
@@ -275,7 +268,7 @@ func gele(ctx *cli.Context) error {
 	node := utils.MakeSystemNode(clientIdentifier, verString, relConfig, makeDefaultExtra(), ctx)
 	startNode(ctx, node)
 	node.Wait()
-	
+
 	return nil
 }
 
@@ -398,6 +391,6 @@ func version(c *cli.Context) error {
 	fmt.Println("OS:", runtime.GOOS)
 	fmt.Printf("GOPATH=%s\n", os.Getenv("GOPATH"))
 	fmt.Printf("GOROOT=%s\n", runtime.GOROOT())
-	
+
 	return nil
 }

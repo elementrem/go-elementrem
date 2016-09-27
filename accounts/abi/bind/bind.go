@@ -17,7 +17,7 @@
 // Package bind generates Elementrem contract Go bindings.
 //
 // Detailed usage document and tutorial available on the go-elementrem Wiki page:
-// https://github.com/elementrem/go-elementrem/wiki/Native-DApps:-Go-bindings-to-Elementrem-contracts
+
 package bind
 
 import (
@@ -78,7 +78,7 @@ func Bind(types []string, abis []string, bytecodes []string, pkg string) (string
 					normalized.Outputs[j].Name = capitalise(output.Name)
 				}
 			}
-			// Append the methos to the call or transact lists
+			// Append the method to the call or transact lists
 			if original.Const {
 				calls[original.Name] = &tmplMethod{Original: original, Normalized: normalized, Structured: structured(original)}
 			} else {

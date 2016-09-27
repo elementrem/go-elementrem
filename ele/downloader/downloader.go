@@ -54,7 +54,7 @@ var (
 	rttMinConfidence = 0.1                               // Worse confidence factor in our estimated RTT value
 	ttlScaling       = 3                                 // Constant scaling factor for RTT -> TTL conversion
 	ttlLimit         = time.Minute                       // Maximum TTL allowance to prevent reaching crazy timeouts
- 
+
 	qosTuningPeers   = 5    // Number of peers to tune based on (best peers)
 	qosConfidenceCap = 10   // Number of peers above which not to modify RTT confidence
 	qosTuningImpact  = 0.25 // Impact that a new tuning target has on the previous value
@@ -380,7 +380,7 @@ func (d *Downloader) syncWithPeer(p *peer, hash common.Hash, td *big.Int) (err e
 	if p.version < 62 {
 		return errTooOld
 	}
- 
+
 	glog.V(logger.Debug).Infof("Synchronising with the network using: %s [ele/%d]", p.id, p.version)
 	defer func(start time.Time) {
 		glog.V(logger.Debug).Infof("Synchronisation terminated after %v", time.Since(start))
@@ -403,7 +403,7 @@ func (d *Downloader) syncWithPeer(p *peer, hash common.Hash, td *big.Int) (err e
 	}
 	d.syncStatsChainHeight = height
 	d.syncStatsLock.Unlock()
- 
+
 	// Initiate the sync using a concurrent header and content retrieval algorithm
 	pivot := uint64(0)
 	switch d.mode {
@@ -555,7 +555,7 @@ func (d *Downloader) fetchHeight(p *peer) (*types.Header, error) {
 // In the rare scenario when we ended up on a long reorganisation (i.e. none of
 // the head links match), we do a binary search to find the common ancestor.
 func (d *Downloader) findAncestor(p *peer, height uint64) (uint64, error) {
-	glog.V(logger.Debug).Infof("%v: looking for common ancestor", p)
+	glog.V(logger.Debug).Infof("%v: looking for common ancestor (remote height %d)", p, height)
 
 	// Figure out the valid ancestor range to prevent rewrite attacks
 	floor, ceil := int64(-1), d.headHeader().Number.Uint64()
@@ -736,8 +736,8 @@ func (d *Downloader) fetchHeaders(p *peer, from uint64) error {
 
 	getHeaders := func(from uint64) {
 		request = time.Now()
-		timeout.Reset(d.requestTTL())	
-		
+		timeout.Reset(d.requestTTL())
+
 		if skeleton {
 			glog.V(logger.Detail).Infof("%v: fetching %d skeleton headers from #%d", p, MaxHeaderFetch, from)
 			go p.getAbsHeaders(from+uint64(MaxHeaderFetch)-1, MaxSkeletonSize, MaxHeaderFetch-1, false)
@@ -799,7 +799,7 @@ func (d *Downloader) fetchHeaders(p *peer, from uint64) error {
 				case <-d.cancelCh:
 					return errCancelHeaderFetch
 				}
-				from += uint64(len(headers))			
+				from += uint64(len(headers))
 			}
 			getHeaders(from)
 
@@ -1116,7 +1116,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 				if glog.V(logger.Detail) {
 					if request.From > 0 {
 						glog.Infof("%s: requesting %s(s) from #%d", peer, strings.ToLower(kind), request.From)
-					} else if len(request.Headers) > 0 {					
+					} else if len(request.Headers) > 0 {
 						glog.Infof("%s: requesting %d %s(s), first at #%d", peer, len(request.Headers), strings.ToLower(kind), request.Headers[0].Number)
 					} else {
 						glog.Infof("%s: requesting %d %s(s)", peer, len(request.Hashes), strings.ToLower(kind))

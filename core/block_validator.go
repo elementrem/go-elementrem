@@ -222,7 +222,7 @@ func ValidateHeader(config *ChainConfig, pow pow.PoW, header *types.Header, pare
 	}
 
 	expd := CalcDifficulty(config, header.Time.Uint64(), parent.Time.Uint64(), parent.Number, parent.Difficulty)
-	if expd.Cmp(header.Difficulty) != 0 && expd.Cmp(header.Difficulty) > 2000 {
+	if expd.Cmp(header.Difficulty) > 1 {
 		return fmt.Errorf("Difficulty check failed for header %v, %v", header.Difficulty, expd)
 	}
 
@@ -247,7 +247,8 @@ func ValidateHeader(config *ChainConfig, pow pow.PoW, header *types.Header, pare
 			return &BlockNonceErr{header.Number, header.Hash(), header.Nonce.Uint64()}
 		}
 	}
-	return nil
+	// If all checks passed, validate the extra-data field for hard forks
+	return ValidateINTERSTELLARHeaderExtraData(config, header)
 }
 
 // CalcDifficulty is the difficulty adjustment algorithm. It returns
