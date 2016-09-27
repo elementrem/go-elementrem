@@ -158,7 +158,7 @@ func (hc *HeaderChain) WriteHeader(header *types.Header) (status WriteStatus, er
 			headHeader = hc.GetHeader(headHash)
 			headNumber = headHeader.Number.Uint64()
 		}
-		
+
 		// Extend the canonical chain with the new header
 		if err := WriteCanonicalHash(hc.chainDb, hash, number); err != nil {
 			glog.Fatalf("failed to insert header number: %v", err)
@@ -166,7 +166,7 @@ func (hc *HeaderChain) WriteHeader(header *types.Header) (status WriteStatus, er
 		if err := WriteHeadHeaderHash(hc.chainDb, hash); err != nil {
 			glog.Fatalf("failed to insert head header hash: %v", err)
 		}
-		
+
 		hc.currentHeaderHash, hc.currentHeader = hash, types.CopyHeader(header)
 
 		status = CanonStatTy

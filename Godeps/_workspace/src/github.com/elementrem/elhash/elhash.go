@@ -369,7 +369,7 @@ func (pow *Full) Search(block pow.Block, stop <-chan struct{}, index int) (nonce
 			ret := C.elhash_full_compute(dag.ptr, hash, C.uint64_t(nonce))
 			result := h256ToHash(ret.result).Big()
 
-			// TODO: disagrees with the spec https://github.com/elementrem/wiki/wiki/Elhash#mining
+			// TODO: disagrees with the spec https://github.com/elementrem/
 			if ret.success && result.Cmp(target) <= 0 {
 				mixDigest = C.GoBytes(unsafe.Pointer(&ret.mix_hash), C.int(32))
 				atomic.AddInt32(&pow.hashRate, -previousHashrate)

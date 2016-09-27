@@ -124,7 +124,7 @@ func run(ctx *cli.Context) error {
 	})
 
 	tstart := time.Now()
-	
+
 	var (
 		ret []byte
 		err error

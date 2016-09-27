@@ -57,7 +57,7 @@ var (
 // peer represents an active peer from which hashes and blocks are retrieved.
 type peer struct {
 	id string // Unique identifier of the peer
-	
+
 	headerIdle  int32 // Current header activity state of the peer (idle = 0, active = 1)
 	blockIdle   int32 // Current block activity state of the peer (idle = 0, active = 1)
 	receiptIdle int32 // Current receipt activity state of the peer (idle = 0, active = 1)
@@ -76,7 +76,7 @@ type peer struct {
 	stateStarted   time.Time // Time instance when the last node data fetch was started
 
 	lacking map[common.Hash]struct{} // Set of hashes not to request (didn't have previously)
-	
+
 	currentHead currentHeadRetrievalFn // Method to fetch the currently known head of the peer
 
 	getRelHeaders  relativeHeaderFetcherFn // [ele/62] Method to retrieve a batch of headers from an origin hash

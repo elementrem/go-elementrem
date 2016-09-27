@@ -39,8 +39,8 @@ setup(
     author_email="matthew.wampler.doty@gmail.com",
     license='GPL',
     version='0.1.23',
-    url='https://github.com/elementrem/elhash',
-    download_url='https://github.com/elementrem/elhash/tarball/v23',
+    url='https://github.com/elementrem/',
+    download_url='https://github.com/elementrem/',
     description=('Python wrappers for elhash, the elementrem proof of work'
                  'hashing function'),
     ext_modules=[pyelhash],

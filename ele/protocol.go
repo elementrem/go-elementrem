@@ -36,7 +36,7 @@ const (
 var ProtocolName = "ele"
 
 // Supported versions of the ele protocol (first is primary).
-var ProtocolVersions = []uint{ele63, ele62,}
+var ProtocolVersions = []uint{ele63, ele62}
 
 // Number of implemented message corresponding to different protocol versions.
 var ProtocolLengths = []uint64{17, 8}
@@ -57,7 +57,7 @@ const (
 	GetBlockBodiesMsg  = 0x05
 	BlockBodiesMsg     = 0x06
 	NewBlockMsg        = 0x07
-	
+
 	// Protocol messages belonging to ele/63
 	GetNodeDataMsg = 0x0d
 	NodeDataMsg    = 0x0e

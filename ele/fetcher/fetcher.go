@@ -675,7 +675,7 @@ func (f *Fetcher) insert(peer string, block *types.Block) {
 			// Weird future block, don't fail, but neither propagate
 
 		default:
-			// Something went very wrong, drop the peer
+			// Someleing went very wrong, drop the peer
 			glog.V(logger.Debug).Infof("Peer %s: block #%d [%x…] verification failed: %v", peer, block.NumberU64(), hash[:4], err)
 			f.dropPeer(peer)
 			return

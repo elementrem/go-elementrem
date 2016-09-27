@@ -37,9 +37,6 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     You should have received a copy of the GNU Lesser General Public License
     along with elementrem.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
-
- */
 
 var utils = require('../utils/utils');
 var c = require('../utils/config');
@@ -294,8 +291,6 @@ module.exports = {
     You should have received a copy of the GNU Lesser General Public License
     along with elementrem.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
- */
 
 var BigNumber = require('bignumber.js');
 var utils = require('../utils/utils');
@@ -491,8 +486,6 @@ module.exports = {
     You should have received a copy of the GNU Lesser General Public License
     along with elementrem.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 var f = require('./formatters');
 
@@ -567,8 +560,6 @@ module.exports = {
     You should have received a copy of the GNU Lesser General Public License
     along with elementrem.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 /**
  * Returns the contstructor with matching number of arguments
@@ -634,8 +625,6 @@ module.exports = {
     You should have received a copy of the GNU Lesser General Public License
     along with elementrem.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
- */
 
 /**
  * Utils
@@ -702,8 +691,6 @@ module.exports = {
     You should have received a copy of the GNU Lesser General Public License
     along with elementrem.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- */
 
 /**
  * Utils
@@ -2533,7 +2520,7 @@ module.exports = {
         }
 
 
-        // PROTOTYPE/INSTANCE MELEODS
+        // PROTOTYPE/INSTANCE METHODS
 
 
         /*
@@ -3860,8 +3847,6 @@ module.exports = {
     You should have received a copy of the GNU Lesser General Public License
     along with natspec.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
- */
 
 var abi = require('./node_modules/web3/lib/solidity/abi.js'); 
 

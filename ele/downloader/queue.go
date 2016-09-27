@@ -153,7 +153,7 @@ func (q *queue) Reset() {
 	q.headerHead = common.Hash{}
 
 	q.headerPendPool = make(map[string]*fetchRequest)
-	
+
 	q.blockTaskPool = make(map[common.Hash]*types.Header)
 	q.blockTaskQueue.Reset()
 	q.blockPendPool = make(map[string]*fetchRequest)

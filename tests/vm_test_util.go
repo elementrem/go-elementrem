@@ -103,7 +103,7 @@ func benchVmTest(test VmTest, env map[string]string, b *testing.B) {
 	db, _ := eledb.NewMemDatabase()
 	statedb, _ := state.New(common.Hash{}, db)
 	for addr, account := range test.Pre {
-		obj := StateObjectFromAccount(db, addr, account)
+		obj := StateObjectFromAccount(db, addr, account, statedb.MarkStateObjectDirty)
 		statedb.SetStateObject(obj)
 		for a, v := range account.Storage {
 			obj.SetState(common.HexToHash(a), common.HexToHash(v))
@@ -154,7 +154,7 @@ func runVmTest(test VmTest) error {
 	db, _ := eledb.NewMemDatabase()
 	statedb, _ := state.New(common.Hash{}, db)
 	for addr, account := range test.Pre {
-		obj := StateObjectFromAccount(db, addr, account)
+		obj := StateObjectFromAccount(db, addr, account, statedb.MarkStateObjectDirty)
 		statedb.SetStateObject(obj)
 		for a, v := range account.Storage {
 			obj.SetState(common.HexToHash(a), common.HexToHash(v))
@@ -205,11 +205,9 @@ func runVmTest(test VmTest) error {
 		if obj == nil {
 			continue
 		}
-
 		for addr, value := range account.Storage {
-			v := obj.GetState(common.HexToHash(addr))
+			v := statedb.GetState(obj.Address(), common.HexToHash(addr))
 			vexp := common.HexToHash(value)
-
 			if v != vexp {
 				return fmt.Errorf("(%x: %s) storage failed. Expected %x, got %x (%v %v)\n", obj.Address().Bytes()[0:4], addr, vexp, v, vexp.Big(), v.Big())
 			}
@@ -241,7 +239,7 @@ func RunVm(state *state.StateDB, env, exec map[string]string) ([]byte, vm.Logs, 
 
 	caller := state.GetOrNewStateObject(from)
 
-	vmenv := NewEnvFromMap(RuleSet{params.MainNetHomesteadBlock}, state, env, exec)
+	vmenv := NewEnvFromMap(RuleSet{params.MainNetHomesteadBlock, params.MainNetINTERSTELLARleapBlock, true}, state, env, exec)
 	vmenv.vmTest = true
 	vmenv.skipTransfer = true
 	vmenv.initial = true

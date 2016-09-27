@@ -39,7 +39,7 @@ type ContractBackend struct {
 }
 
 // NewContractBackend creates a new native contract backend using an existing
-// Etheruem object.
+// Elementrem object.
 func NewContractBackend(ele *Elementrem) *ContractBackend {
 	return &ContractBackend{
 		eapi:  NewPublicElementremAPI(ele),

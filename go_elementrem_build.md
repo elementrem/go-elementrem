@@ -5,9 +5,12 @@
 
 **Prerequisite**
 
+`sudo apt-get install -y build-essential libgmp3-dev git curl`		
+
 * [Go lang](https://golang.org/dl/)   
 Ubuntu, for instance    
-`sudo apt-get install -y build-essential libgmp3-dev golang git curl`		
+`sudo apt-get install -y golang`		
+
 `curl -O https://storage.googleapis.com/golang/go1.6.2.linux-amd64.tar.gz`  
 `sudo tar -C /usr/local -xzf go1.6.2.linux-amd64.tar.gz`  
 `mkdir -p ~/go; echo "export GOPATH=$HOME/go" >> ~/.bashrc`   
@@ -21,6 +24,12 @@ Ubuntu, for instance
 `docker pull ubuntu:16.04` (16.04 ubuntu version. if 15.04 `docker pull ubuntu:15.04`) 
 
 **build** 
+
+Don't expect that you can build app for all platforms on one platform.		
+- If your app has native dependencies, it can be compiled only on the target platform. prebuild is a solution, but most node modules don't provide prebuilt binaries.		
+- OS Code Signing works only on MacOS. Cannot be fixed.
+- Elementrem Gele provides support for 64-bit only.		
+
 ```
 cd go-elementrem    
 make gele
@@ -45,5 +54,7 @@ make gele-linux
 2.Automatically connects to the Elementrem node : Default directory will be created in the /Library/Elementrem		
 3.Run `gele attach` from Terminal(launchpad -> Terminal) will be automatically connected to the Elementrem console.	    
 		<br>
-*Elementrem Network listening port = 30707
+
+*Elementrem Default Network listening port = 30707		
+*Elementrem Default RPC port = 7075
 

@@ -153,7 +153,7 @@ func (s *PublicFilterAPI) NewBlockFilter() (string, error) {
 	s.blockMu.Lock()
 	s.blockQueue[id] = &hashQueue{timeout: time.Now()}
 	s.blockMu.Unlock()
-	
+
 	filter.BlockCallback = func(block *types.Block, logs vm.Logs) {
 		s.blockMu.Lock()
 		defer s.blockMu.Unlock()
@@ -190,7 +190,7 @@ func (s *PublicFilterAPI) NewPendingTransactionFilter() (string, error) {
 	s.transactionMu.Lock()
 	s.transactionQueue[id] = &hashQueue{timeout: time.Now()}
 	s.transactionMu.Unlock()
-	
+
 	filter.TransactionCallback = func(tx *types.Transaction) {
 		s.transactionMu.Lock()
 		defer s.transactionMu.Unlock()
@@ -222,7 +222,7 @@ func (s *PublicFilterAPI) newLogFilter(earliest, latest int64, addresses []commo
 	s.logMu.Lock()
 	s.logQueue[id] = &logQueue{timeout: time.Now()}
 	s.logMu.Unlock()
-	
+
 	filter.SetBeginBlock(earliest)
 	filter.SetEndBlock(latest)
 	filter.SetAddresses(addresses)
@@ -489,7 +489,7 @@ func (s *PublicFilterAPI) UninstallFilter(filterId string) bool {
 		return true
 	}
 	s.transactionMu.Unlock()
-	
+
 	return false
 }
 
