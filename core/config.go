@@ -31,16 +31,17 @@ var ChainConfigNotFoundErr = errors.New("ChainConfig not found") // general conf
 // that any network, identified by its genesis block, can have its own
 // set of configuration options.
 type ChainConfig struct {
-	HomesteadBlock *big.Int // homestead switch block
+	HomesteadBlock *big.Int `json:"homesteadBlock"` // Homestead switch block (nil = no fork, 0 = already homestead)
+	INTERSTELLARleapBlock   *big.Int `json:"interstellarLeapBlock"`   // TheINTERSTELLAR hyperz-leap switch block (nil = no fork)
+	INTERSTELLARleapSupport bool     `json:"interstellarLeapSupport"` // Whether the nodes supports or opposes the INTERSTELLAR hyperz-leap
 
 	VmConfig vm.Config `json:"-"`
 }
 
 // IsHomestead returns whether num is either equal to the homestead block or greater.
 func (c *ChainConfig) IsHomestead(num *big.Int) bool {
-	if num == nil {
+	if c.HomesteadBlock == nil || num == nil {
 		return false
 	}
-
 	return num.Cmp(c.HomesteadBlock) >= 0
 }

@@ -111,24 +111,20 @@ var (
 	}
 	NetworkIdFlag = cli.IntFlag{
 		Name:  "networkid",
-		Usage: "Network identifier (73733 = Elementrem MainNet)",
+		Usage: "Network identifier",
 		Value: ele.NetworkId,
 	}
 	OlympicFlag = cli.BoolFlag{
-		Name:  "olympic",
-		Usage: "Olympic network is deprecated.",
+		Name:  "testnet1",
+		Usage: "Test1 network is deprecated",
 	}
 	TestNetFlag = cli.BoolFlag{
-		Name:  "testnet",
-		Usage: "Morden network is deprecated.",
+		Name:  "testnet2",
+		Usage: "Test2 network is deprecated",
 	}
 	DevModeFlag = cli.BoolFlag{
 		Name:  "dev",
-		Usage: "Developer mode is deprecated.",
-	}
-	GenesisFileFlag = cli.StringFlag{
-		Name:  "genesis",
-		Usage: "Insert/overwrite the genesis block (JSON format)",
+		Usage: "Developer mode: pre-configured private network with several debugging flags",
 	}
 	IdentityFlag = cli.StringFlag{
 		Name:  "identity",
@@ -534,20 +530,6 @@ func MakeWSRpcHost(ctx *cli.Context) string {
 	return ctx.GlobalString(WSListenAddrFlag.Name)
 }
 
-// MakeGenesisBlock loads up a genesis block from an input file specified in the
-// command line, or returns the empty string if none set.
-func MakeGenesisBlock(ctx *cli.Context) string {
-	genesis := ctx.GlobalString(GenesisFileFlag.Name)
-	if genesis == "" {
-		return ""
-	}
-	data, err := ioutil.ReadFile(genesis)
-	if err != nil {
-		Fatalf("Failed to load custom genesis file: %v", err)
-	}
-	return string(data)
-}
-
 // MakeDatabaseHandles raises out the number of allowed file handles per process
 // for Gele and returns half of the allowance to assign to the database.
 func MakeDatabaseHandles() int {
@@ -598,7 +580,7 @@ func MakeAddress(accman *accounts.Manager, account string) (accounts.Account, er
 func MakeElementbase(accman *accounts.Manager, ctx *cli.Context) common.Address {
 	accounts := accman.Accounts()
 	if !ctx.GlobalIsSet(ElementbaseFlag.Name) && len(accounts) == 0 {
-		glog.V(logger.Error).Infoln("WARNING: No elementbase set and no accounts found as default")
+		glog.V(logger.Error).Infoln("No accounts found as default")
 		return common.Address{}
 	}
 	elementbase := ctx.GlobalString(ElementbaseFlag.Name)
@@ -689,7 +671,6 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 
 	eleConf := &ele.Config{
 		ChainConfig:             MustMakeChainConfig(ctx),
-		Genesis:                 MakeGenesisBlock(ctx),
 		FastSync:                ctx.GlobalBool(FastSyncFlag.Name),
 		BlockChainVersion:       ctx.GlobalInt(BlockchainVersionFlag.Name),
 		DatabaseCache:           ctx.GlobalInt(CacheFlag.Name),
@@ -720,19 +701,15 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 	switch {
 	case ctx.GlobalBool(OlympicFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
-			eleConf.NetworkId = 70708
+			eleConf.NetworkId = 1
 		}
-		if !ctx.GlobalIsSet(GenesisFileFlag.Name) {
-			eleConf.Genesis = core.OlympicGenesisBlock()
-		}
+		eleConf.Genesis = core.OlympicGenesisBlock()
 
 	case ctx.GlobalBool(TestNetFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
-			eleConf.NetworkId = 70709
+			eleConf.NetworkId = 2
 		}
-		if !ctx.GlobalIsSet(GenesisFileFlag.Name) {
-			eleConf.Genesis = core.TestNetGenesisBlock()
-		}
+		eleConf.Genesis = core.TestNetGenesisBlock()
 		state.StartingNonce = 1048576 // (2**20)
 
 	case ctx.GlobalBool(DevModeFlag.Name):
@@ -747,9 +724,7 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 			stackConf.ListenAddr = ":0"
 		}
 		// Override the Elementrem protocol configs
-		if !ctx.GlobalIsSet(GenesisFileFlag.Name) {
-			eleConf.Genesis = core.OlympicGenesisBlock()
-		}
+		eleConf.Genesis = core.OlympicGenesisBlock()
 		if !ctx.GlobalIsSet(GasPriceFlag.Name) {
 			eleConf.GasPrice = new(big.Int)
 		}
@@ -789,7 +764,7 @@ func SetupNetwork(ctx *cli.Context) {
 		params.GenesisGasLimit = big.NewInt(3141592)
 		params.MinGasLimit = big.NewInt(125000)
 		params.MaximumExtraDataSize = big.NewInt(1024)
-		NetworkIdFlag.Value = 73733
+		NetworkIdFlag.Value = 0
 		core.BlockReward = big.NewInt(1.5e+18)
 		core.ExpDiffPeriod = big.NewInt(math.MaxInt64)
 	}
@@ -806,24 +781,41 @@ func MustMakeChainConfig(ctx *cli.Context) *core.ChainConfig {
 
 // MustMakeChainConfigFromDb reads the chain configuration from the given database.
 func MustMakeChainConfigFromDb(ctx *cli.Context, db eledb.Database) *core.ChainConfig {
-	genesis := core.GetBlock(db, core.GetCanonicalHash(db, 0))
+	// If the chain is already initialized, use any existing chain configs
+	config := new(core.ChainConfig)
 
+	genesis := core.GetBlock(db, core.GetCanonicalHash(db, 0))
 	if genesis != nil {
-		// Existing genesis block, use stored config if available.
 		storedConfig, err := core.GetChainConfig(db, genesis.Hash())
-		if err == nil {
-			return storedConfig
-		} else if err != core.ChainConfigNotFoundErr {
+		switch err {
+		case nil:
+			config = storedConfig
+		case core.ChainConfigNotFoundErr:
+			// No configs found, use empty, will populate below
+		default:
 			Fatalf("Could not make chain configuration: %v", err)
 		}
 	}
-	var homesteadBlockNo *big.Int
-	if ctx.GlobalBool(TestNetFlag.Name) {
-		homesteadBlockNo = params.TestNetHomesteadBlock
-	} else {
-		homesteadBlockNo = params.MainNetHomesteadBlock
+	// Set any missing fields due to them being unset or system upgrade
+	if config.HomesteadBlock == nil {
+		if ctx.GlobalBool(TestNetFlag.Name) {
+			config.HomesteadBlock = params.TestNetHomesteadBlock
+		} else {
+			config.HomesteadBlock = params.MainNetHomesteadBlock
+		}
 	}
-	return &core.ChainConfig{HomesteadBlock: homesteadBlockNo}
+	if config.INTERSTELLARleapBlock == nil {
+		if ctx.GlobalBool(TestNetFlag.Name) {
+			config.INTERSTELLARleapBlock = params.TestNetINTERSTELLARleapBlock
+		} else {
+			config.INTERSTELLARleapBlock = params.MainNetINTERSTELLARleapBlock
+		}
+		config.INTERSTELLARleapSupport = true
+	}
+
+		config.INTERSTELLARleapSupport = true
+
+	return config
 }
 
 // MakeChainDatabase open an LevelDB using the flags passed to the client and will hard crash if it fails.

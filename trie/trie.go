@@ -189,7 +189,7 @@ func (t *Trie) insert(n node, prefix, key []byte, value node) (bool, node, error
 		if v, ok := n.(valueNode); ok {
 			return !bytes.Equal(v, value.(valueNode)), value, nil
 		}
-		return true, value, nil		
+		return true, value, nil
 	}
 	switch n := n.(type) {
 	case shortNode:
@@ -566,7 +566,7 @@ func (h *hasher) hashChildren(original node, db DatabaseWriter) (node, node, err
 			n.Children[16] = valueNode(nil)
 		}
 		return n, cached, nil
-		
+
 	default:
 		// Value and hash nodes don't have children so they're left as were
 		return n, original, nil

@@ -3,17 +3,12 @@ package elhash
 /*  DO NOT EDIT!!!
 
     This code is version controlled at
-    https://github.com/elementrem/cpp-elementrem/blob/develop/libelhash-cl/elhash_cl_miner_kernel.cl
+    https://github.com/elementrem/libelementrem/blob/master/libelhash-cl/elhash_cl_miner_kernel.cl
 
     If needed change it there first, then copy over here.
 */
 
 const kernel = `
-// author Tim Hughes <tim@twistedfury.com>
-// Tested on Radeon HD 7850
-// Hashrate: 15940347 hashes/s
-// Bandwidth: 124533 MB/s
-// search kernel should fit in <= 84 VGPRS (3 wavefronts)
 
 #define THREADS_PER_HASH (128 / 16)
 #define HASHES_PER_LOOP (GROUP_SIZE / THREADS_PER_HASH)

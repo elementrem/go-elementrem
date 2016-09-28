@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors
+// Copyright 2016 The go-elementrem Authors.
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -33,7 +33,7 @@ import (
 const (
 	// The Elementrem main network genesis block.
 	defaultGenesisHash = "0xc7130c992fb03c628c86439f8e5d1facdbf48f3f3c115ffd99a0e3abefa1016f"
-	badBlocksURL       = ""
+	badBlocksURL       = "https://"
 )
 
 var EnableBadBlockReporting = false

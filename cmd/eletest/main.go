@@ -74,9 +74,9 @@ func runTestWithReader(test string, r io.Reader) error {
 	var err error
 	switch strings.ToLower(test) {
 	case "bk", "block", "blocktest", "blockchaintest", "blocktests", "blockchaintests":
-		err = tests.RunBlockTestWithReader(params.MainNetHomesteadBlock, r, skipTests)
+		err = tests.RunBlockTestWithReader(params.MainNetHomesteadBlock, params.MainNetINTERSTELLARleapBlock, r, skipTests)
 	case "st", "state", "statetest", "statetests":
-		rs := tests.RuleSet{HomesteadBlock: params.MainNetHomesteadBlock}
+		rs := tests.RuleSet{HomesteadBlock: params.MainNetHomesteadBlock, INTERSTELLARleapBlock: params.MainNetINTERSTELLARleapBlock, INTERSTELLARleapSupport: true}
 		err = tests.RunStateTestWithReader(rs, r, skipTests)
 	case "tx", "transactiontest", "transactiontests":
 		err = tests.RunTransactionTestsWithReader(r, skipTests)
@@ -208,7 +208,7 @@ func main() {
 	app.Usage = "go-elementrem test interface"
 	app.Action = setupApp
 	app.Version = "0.2.0"
-	app.Author = "go-elementrem team"
+	app.Author = "elementrem team"
 
 	app.Flags = []cli.Flag{
 		TestFlag,

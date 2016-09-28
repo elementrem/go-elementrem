@@ -1,13 +1,13 @@
 ```bash
 $ ./gele --help
 NAME:
-   gele - the go-elementrem command line interface
+   gele-linux-amd64 - the go-elementrem command line interface
 
 USAGE:
-   gele [options] command [command options] [arguments...]
+   gele-linux-amd64 [options] command [command options] [arguments...]
    
 VERSION:
-   1.4.7-stable-64a5a363
+   1.4.12-stable-927f38df
    
 COMMANDS:
    import	import a blockchain file
@@ -31,11 +31,10 @@ COMMANDS:
 ELEMENTREM OPTIONS:
   --datadir "/home/chain/.elementrem"	Data directory for the databases and keystore
   --keystore 				Directory for the keystore (default = inside the datadir)
-  --networkid value			Network identifier (73733 = Elementrem MainNet) (default: 73733)
-  --olympic				Olympic network is deprecated.
-  --testnet				Morden network is deprecated.
-  --dev					Developer mode is deprecated.
-  --genesis value			Insert/overwrite the genesis block (JSON format)
+  --networkid value			Network identifier (default: 73733)
+  --testnet1				Test1 network is deprecated
+  --testnet2				Test2 network is deprecated
+  --dev					Developer mode: pre-configured private network with several debugging flags
   --identity value			Custom node name
   --fast				Enable fast syncing through state downloads
   --lightkdf				Reduce key-derivation RAM & CPU usage at some expense of KDF strength
@@ -76,7 +75,7 @@ NETWORKING OPTIONS:
   
 MINER OPTIONS:
   --mine			Enable mining
-  --minerthreads value		Number of CPU threads to use for mining (default: 4)
+  --minerthreads value		Number of CPU threads to use for mining (default: 2)
   --minergpus value		List of GPUs to use for mining (e.g. '0,1' will use the first two GPUs found)
   --autodag			Enable automatic DAG pregeneration
   --elementbase value		Public address for block mining rewards (default = first account created) (default: "0")
@@ -117,4 +116,5 @@ EXPERIMENTAL OPTIONS:
 MISCELLANEOUS OPTIONS:
   --solc value	Solidity compiler command to be used (default: "solc")
   --help, -h	show help
+
 ```

@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors
+// Copyright 2016 The go-elementrem Authors.
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -31,7 +31,7 @@ import (
 // bridge is a collection of JavaScript utility methods to bride the .js runtime
 // environment and the Go RPC connection backing the remote method calls.
 type bridge struct {
-	client   rpc.Client   // RPC client to execute elementrem requests through
+	client   rpc.Client   // RPC client to execute Elementrem requests through
 	prompter UserPrompter // Input prompter to allow interactive user feedback
 	printer  io.Writer    // Output writer to serialize any display strings to
 }
