@@ -42,11 +42,7 @@ var (
 		},
 		Description: `
 
-    get wallet import /path/to/my/presale.wallet
-
-will prompt for your password and imports your element presale account.
-It can be used non-interactively with the --password option taking a
-passwordfile as argument containing the wallet password in plaintext.
+    Elementrem has no presale,ICO.
 
 `}
 	accountCommand = cli.Command{
