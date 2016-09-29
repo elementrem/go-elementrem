@@ -50,7 +50,7 @@ const (
 	clientIdentifier = "Gele"   // Client identifier to advertise over the network
 	versionMajor     = 1        // Major version component of the current release
 	versionMinor     = 4        // Minor version component of the current release
-	versionPatch     = 13       // Patch version component of the current release
+	versionPatch     = 14       // Patch version component of the current release
 	versionMeta      = "stable" // Version metadata to append to the version string
 
 	versionOracle = "0x1a38d480bbd14caab0f8736345f81844d7d36abe" // Elementrem address of the Gele release oracle
@@ -219,7 +219,7 @@ participating.
 		// This should be the only place where reporting is enabled
 		// because it is not intended to run while testing.
 		// In addition to this check, bad block reports are sent only
-		// for chains with the main network genesis block and network id 1.
+		// for chains with the main network genesis block and network id 73733
 		ele.EnableBadBlockReporting = true
 
 		utils.SetupNetwork(ctx)
