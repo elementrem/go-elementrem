@@ -24,28 +24,26 @@ import (
 	"github.com/elementrem/go-elementrem/common"
 )
 
-// TestNetINTERSTELLARleapBlock is the block number where the INTERSTELLAR hyperz-leap commences on
-// the Elementrem test network. It's enforced nil since it was decided not to do a
-// testnet transition.
+// INTERSTELLAR leap will jump to the entire block as the new strong network.
+// the Elementrem test network is deprecated.
 var TestNetINTERSTELLARleapBlock *big.Int
 
 // MainNetINTERSTELLARleapBlock is the block number where the INTERSTELLAR hyperz-leap commences on
 // the Elementrem main network.
-var MainNetINTERSTELLARleapBlock = big.NewInt(9223372036854775805)
+var MainNetINTERSTELLARleapBlock = big.NewInt(0)
 
 // INTERSTELLARleapBlockExtra is the block header extra-data field to set for the INTERSTELLAR fork
 // point and a number of consecutive blocks to allow fast/light syncers to correctly
-var INTERSTELLARleapBlockExtra = common.FromHex("0x7065726d616e656e746c7920656e6c617267696e67")
+var INTERSTELLARleapBlockExtra = common.FromHex("0xaa57ee17a7257988a36b7b418cd716d315028b19")
 
 // INTERSTELLARleapExtraRange is the number of consecutive blocks from the INTERSTELLAR fork point
 // to override the extra-data in to prevent no-fork attacks.
-var INTERSTELLARleapExtraRange = big.NewInt(7)
+var INTERSTELLARleapExtraRange = big.NewInt(1)
 
-// INTERSTELLARRefundContract is the address of the refund contract to send INTERSTELLAR balances to.
+// INTERSTELLARRefundContract is the address of the none.
 var INTERSTELLARRefundContract = common.HexToAddress("0x")
 
-// INTERATELLARDrainList is the list of accounts whose full balances will be moved into a
-// refund contract at the beginning of the interstellar-leap block.
+// INTERATELLARDrainList is deprecated.
 var INTERATELLARDrainList []common.Address
 
 func init() {
@@ -61,8 +59,6 @@ func init() {
 	}
 }
 
-// interstellarDrainListJSON is the JSON encoded list of accounts whose full balances will
-// be moved into a refund contract at the beginning of the interstellar-leap block.
 const interstellarDrainListJSON = `
 [
    {
