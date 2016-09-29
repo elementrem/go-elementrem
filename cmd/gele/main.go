@@ -219,7 +219,7 @@ participating.
 		// This should be the only place where reporting is enabled
 		// because it is not intended to run while testing.
 		// In addition to this check, bad block reports are sent only
-		// for chains with the main network genesis block and network id 1.
+		// for chains with the main network genesis block and network id 73733
 		ele.EnableBadBlockReporting = true
 
 		utils.SetupNetwork(ctx)
