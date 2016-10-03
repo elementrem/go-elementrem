@@ -24,6 +24,7 @@ import (
 
 	"github.com/elementrem/go-elementrem/common"
 	"github.com/elementrem/go-elementrem/core/vm"
+	"github.com/elementrem/go-elementrem/crypto"
 	"github.com/elementrem/go-elementrem/eledb"
 	"github.com/elementrem/go-elementrem/logger"
 	"github.com/elementrem/go-elementrem/logger/glog"
@@ -246,6 +247,14 @@ func (self *StateDB) GetCodeSize(addr common.Address) int {
 	return size
 }
 
+func (self *StateDB) GetCodeHash(addr common.Address) common.Hash {
+	stateObject := self.GetStateObject(addr)
+	if stateObject == nil {
+		return common.Hash{}
+	}
+	return common.BytesToHash(stateObject.CodeHash())
+}
+
 func (self *StateDB) GetState(a common.Address, b common.Hash) common.Hash {
 	stateObject := self.GetStateObject(a)
 	if stateObject != nil {
@@ -283,7 +292,7 @@ func (self *StateDB) SetNonce(addr common.Address, nonce uint64) {
 func (self *StateDB) SetCode(addr common.Address, code []byte) {
 	stateObject := self.GetOrNewStateObject(addr)
 	if stateObject != nil {
-		stateObject.SetCode(code)
+		stateObject.SetCode(crypto.Keccak256Hash(code), code)
 	}
 }
 
