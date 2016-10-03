@@ -19,7 +19,6 @@ sudo mv go /usr/local
 export GOROOT=/usr/local/go
 export GOPATH=$HOME/Projects/Proj1
 export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
-source ~/.bashrc
 ```
 
 * [Docker](https://www.docker.com/products/docker#/servers)   
