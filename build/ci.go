@@ -322,7 +322,7 @@ func makeWorkdir(wdflag string) string {
 	if wdflag != "" {
 		err = os.MkdirAll(wdflag, 0744)
 	} else {
-		wdflag, err = ioutil.TempDir("", "eth-deb-build-")
+		wdflag, err = ioutil.TempDir("", "ele-deb-build-")
 	}
 	if err != nil {
 		log.Fatal(err)
