@@ -30,6 +30,7 @@ import (
 	"github.com/elementrem/go-elementrem/core/state"
 	"github.com/elementrem/go-elementrem/core/types"
 	"github.com/elementrem/go-elementrem/core/vm"
+	"github.com/elementrem/go-elementrem/crypto"
 	"github.com/elementrem/go-elementrem/eledb"
 	"github.com/elementrem/go-elementrem/logger/glog"
 	"gopkg.in/urfave/cli.v1"
@@ -141,7 +142,9 @@ func run(ctx *cli.Context) error {
 		)
 	} else {
 		receiver := statedb.CreateAccount(common.StringToAddress("receiver"))
-		receiver.SetCode(common.Hex2Bytes(ctx.GlobalString(CodeFlag.Name)))
+
+		code := common.Hex2Bytes(ctx.GlobalString(CodeFlag.Name))
+		receiver.SetCode(crypto.Keccak256Hash(code), code)
 		ret, err = vmenv.Call(
 			sender,
 			receiver.Address(),
