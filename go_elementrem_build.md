@@ -10,16 +10,6 @@
 * [Go lang](https://golang.org/dl/)   
 Ubuntu, for instance    
 `sudo apt-get install -y golang`		
-```
-sudo apt-get update
-sudo apt-get -y upgrade
-wget https://storage.googleapis.com/golang/go1.7.linux-amd64.tar.gz
-sudo tar -xvf go1.7.linux-amd64.tar.gz
-sudo mv go /usr/local
-export GOROOT=/usr/local/go
-export GOPATH=$HOME/Projects/Proj1
-export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
-```
 
 * [Docker](https://www.docker.com/products/docker#/servers)   
 Ubuntu, for instance    
