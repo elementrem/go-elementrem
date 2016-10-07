@@ -176,7 +176,7 @@ func (self *StateObject) SetState(db trie.Database, key, value common.Hash) {
 	self.setState(key, value)
 }
 
- +func (self *StateObject) setState(key, value common.Hash) {
+func (self *StateObject) setState(key, value common.Hash) {
 	self.cachedStorage[key] = value
 	self.dirtyStorage[key] = value
 
