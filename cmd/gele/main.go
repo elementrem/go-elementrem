@@ -50,7 +50,7 @@ const (
 	clientIdentifier = "Gele"   // Client identifier to advertise over the network
 	versionMajor     = 1        // Major version component of the current release
 	versionMinor     = 4        // Minor version component of the current release
-	versionPatch     = 16       // Patch version component of the current release
+	versionPatch     = 17       // Patch version component of the current release
 	versionMeta      = "stable" // Version metadata to append to the version string
 
 	versionOracle = "0x1a38d480bbd14caab0f8736345f81844d7d36abe" // Elementrem address of the Gele release oracle
