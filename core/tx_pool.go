@@ -47,7 +47,7 @@ var (
 
 var (
 	maxQueuedPerAccount = uint64(64)    // Max limit of queued transactions per address
-	maxQueuedInTotal    = uint64(65536) // Max limit of queued transactions from all accounts
+	maxQueuedInTotal    = uint64(8192)  // Max limit of queued transactions from all accounts
 	maxQueuedLifetime   = 3 * time.Hour // Max amount of time transactions from idle accounts are queued
 	evictionInterval    = time.Minute   // Time interval to check for evictable transactions
 )
@@ -434,7 +434,7 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 	}
 	addr, _ := tx.From() // already validated during insertion
 
-	// Remove it from all internal lists
+	// Remove it from the list of known transactions
 	delete(pool.all, hash)
 
 	// Remove the transaction from the pending lists and reset the account nonce
