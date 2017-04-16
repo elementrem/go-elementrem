@@ -9,7 +9,14 @@
 
 * [Go lang](https://golang.org/dl/)   
 Ubuntu, for instance    
-`sudo apt-get install -y golang`		
+```
+wget https://storage.googleapis.com/golang/go1.8.linux-amd64.tar.gz
+sudo tar -zxvf go1.8.linux-amd64.tar.gz -C /usr/local/
+mkdir ~/go
+export GOROOT=/usr/local/go
+export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+```
+All above environment will be set for your current session only. To make it permanent add above commands in `~/.profile` file. 
 
 * [Docker](https://www.docker.com/products/docker#/servers)   
 Ubuntu, for instance    
