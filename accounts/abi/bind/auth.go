@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -22,7 +22,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/elementrem/go-elementrem/accounts"
+	"github.com/elementrem/go-elementrem/accounts/keystore"
 	"github.com/elementrem/go-elementrem/common"
 	"github.com/elementrem/go-elementrem/core/types"
 	"github.com/elementrem/go-elementrem/crypto"
@@ -35,7 +35,7 @@ func NewTransactor(keyin io.Reader, passphrase string) (*TransactOpts, error) {
 	if err != nil {
 		return nil, err
 	}
-	key, err := accounts.DecryptKey(json, passphrase)
+	key, err := keystore.DecryptKey(json, passphrase)
 	if err != nil {
 		return nil, err
 	}
@@ -48,15 +48,15 @@ func NewKeyedTransactor(key *ecdsa.PrivateKey) *TransactOpts {
 	keyAddr := crypto.PubkeyToAddress(key.PublicKey)
 	return &TransactOpts{
 		From: keyAddr,
-		Signer: func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
+		Signer: func(signer types.Signer, address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 			if address != keyAddr {
 				return nil, errors.New("not authorized to sign this account")
 			}
-			signature, err := crypto.Sign(tx.SigHash().Bytes(), key)
+			signature, err := crypto.Sign(signer.Hash(tx).Bytes(), key)
 			if err != nil {
 				return nil, err
 			}
-			return tx.WithSignature(signature)
+			return tx.WithSignature(signer, signature)
 		},
 	}
 }

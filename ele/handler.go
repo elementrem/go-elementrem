@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -37,6 +37,7 @@ import (
 	"github.com/elementrem/go-elementrem/logger/glog"
 	"github.com/elementrem/go-elementrem/p2p"
 	"github.com/elementrem/go-elementrem/p2p/discover"
+	"github.com/elementrem/go-elementrem/params"
 	"github.com/elementrem/go-elementrem/pow"
 	"github.com/elementrem/go-elementrem/rlp"
 )
@@ -67,7 +68,8 @@ type ProtocolManager struct {
 	txpool      txPool
 	blockchain  *core.BlockChain
 	chaindb     eledb.Database
-	chainconfig *core.ChainConfig
+	chainconfig *params.ChainConfig
+	maxPeers    int
 
 	downloader *downloader.Downloader
 	fetcher    *fetcher.Fetcher
@@ -76,14 +78,16 @@ type ProtocolManager struct {
 	SubProtocols []p2p.Protocol
 
 	eventMux      *event.TypeMux
-	txSub         event.Subscription
-	minedBlockSub event.Subscription
+	txSub         *event.TypeMuxSubscription
+	minedBlockSub *event.TypeMuxSubscription
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
 	txsyncCh    chan *txsync
 	quitSync    chan struct{}
 	noMorePeers chan struct{}
+
+	lesServer LesServer
 
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
@@ -94,7 +98,7 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new elementrem sub protocol manager. The Elementrem sub protocol manages peers capable
 // with the elementrem network.
-func NewProtocolManager(config *core.ChainConfig, fastSync bool, networkId int, mux *event.TypeMux, txpool txPool, pow pow.PoW, blockchain *core.BlockChain, chaindb eledb.Database) (*ProtocolManager, error) {
+func NewProtocolManager(config *params.ChainConfig, fastSync bool, networkId int, maxPeers int, mux *event.TypeMux, txpool txPool, pow pow.PoW, blockchain *core.BlockChain, chaindb eledb.Database) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -103,6 +107,7 @@ func NewProtocolManager(config *core.ChainConfig, fastSync bool, networkId int, 
 		blockchain:  blockchain,
 		chaindb:     chaindb,
 		chainconfig: config,
+		maxPeers:    maxPeers,
 		peers:       newPeerSet(),
 		newPeerCh:   make(chan *peer),
 		noMorePeers: make(chan struct{}),
@@ -156,9 +161,9 @@ func NewProtocolManager(config *core.ChainConfig, fastSync bool, networkId int, 
 		return nil, errIncompatibleConfig
 	}
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(chaindb, manager.eventMux, blockchain.HasHeader, blockchain.HasBlockAndState, blockchain.GetHeader,
-		blockchain.GetBlock, blockchain.CurrentHeader, blockchain.CurrentBlock, blockchain.CurrentFastBlock, blockchain.FastSyncCommitHead,
-		blockchain.GetTd, blockchain.InsertHeaderChain, manager.insertChain, blockchain.InsertReceiptChain, blockchain.Rollback,
+	manager.downloader = downloader.New(downloader.FullSync, chaindb, manager.eventMux, blockchain.HasHeader, blockchain.HasBlockAndState, blockchain.GetHeaderByHash,
+		blockchain.GetBlockByHash, blockchain.CurrentHeader, blockchain.CurrentBlock, blockchain.CurrentFastBlock, blockchain.FastSyncCommitHead,
+		blockchain.GetTdByHash, blockchain.InsertHeaderChain, manager.insertChain, blockchain.InsertReceiptChain, blockchain.Rollback,
 		manager.removePeer)
 
 	validator := func(block *types.Block, parent *types.Block) error {
@@ -171,7 +176,7 @@ func NewProtocolManager(config *core.ChainConfig, fastSync bool, networkId int, 
 		atomic.StoreUint32(&manager.synced, 1) // Mark initial sync done on any fetcher import
 		return manager.insertChain(blocks)
 	}
-	manager.fetcher = fetcher.New(blockchain.GetBlock, validator, manager.BroadcastBlock, heighter, inserter, manager.removePeer)
+	manager.fetcher = fetcher.New(blockchain.GetBlockByHash, validator, manager.BroadcastBlock, heighter, inserter, manager.removePeer)
 
 	if blockchain.Genesis().Hash().Hex() == defaultGenesisHash && networkId == 73733 {
 		glog.V(logger.Debug).Infoln("Bad Block Reporting is enabled")
@@ -253,6 +258,10 @@ func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *p
 // handle is the callback invoked to manage the life cycle of an ele peer. When
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
+	if pm.peers.Len() >= pm.maxPeers {
+		return p2p.DiscTooManyPeers
+	}
+
 	glog.V(logger.Debug).Infof("%v: peer connected [%s]", p, p.Name())
 
 	// Execute the Elementrem handshake
@@ -282,13 +291,13 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 	// If we're INTERSTELLAR hyperz-leap aware, validate any remote peer with regard to the hard-fork
 	if interstellarBlock := pm.chainconfig.INTERSTELLARleapBlock; interstellarBlock != nil {
-		// Request the peer's INTERSTELLAR fork header for extra-data validation
+		// Request the peer's INTERSTELLAR leap header for extra-data validation
 		if err := p.RequestHeadersByNumber(interstellarBlock.Uint64(), 1, 0, false); err != nil {
 			return err
 		}
 		// Start a timer to disconnect if the peer doesn't reply in time
 		p.forkDrop = time.AfterFunc(interstellarChallengeTimeout, func() {
-			glog.V(logger.Warn).Infof("%v: timed out INTERSTELLAR fork-check, dropping", p)
+			glog.V(logger.Debug).Infof("%v: timed out INTERSTELLAR leap-check, dropping", p)
 			pm.removePeer(p.id)
 		})
 		// Make sure it's cleaned up if the peer dies off
@@ -346,13 +355,14 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			// Retrieve the next header satisfying the query
 			var origin *types.Header
 			if hashMode {
-				origin = pm.blockchain.GetHeader(query.Origin.Hash)
+				origin = pm.blockchain.GetHeaderByHash(query.Origin.Hash)
 			} else {
 				origin = pm.blockchain.GetHeaderByNumber(query.Origin.Number)
 			}
 			if origin == nil {
 				break
 			}
+			number := origin.Number.Uint64()
 			headers = append(headers, origin)
 			bytes += estHeaderRlpSize
 
@@ -361,8 +371,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			case query.Origin.Hash != (common.Hash{}) && query.Reverse:
 				// Hash based traversal towards the genesis block
 				for i := 0; i < int(query.Skip)+1; i++ {
-					if header := pm.blockchain.GetHeader(query.Origin.Hash); header != nil {
+					if header := pm.blockchain.GetHeader(query.Origin.Hash, number); header != nil {
 						query.Origin.Hash = header.ParentHash
+						number--
 					} else {
 						unknown = true
 						break
@@ -418,7 +429,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			// If we already have a INTERSTELLAR header, we can check the peer's TD against it. If
 			// the peer's ahead of this, it too must have a reply to the INTERSTELLAR check
 			if interstellarHeader := pm.blockchain.GetHeaderByNumber(pm.chainconfig.INTERSTELLARleapBlock.Uint64()); interstellarHeader != nil {
-				if _, td := p.Head(); td.Cmp(pm.blockchain.GetTd(interstellarHeader.Hash())) >= 0 {
+				if _, td := p.Head(); td.Cmp(pm.blockchain.GetTd(interstellarHeader.Hash(), interstellarHeader.Number.Uint64())) >= 0 {
 					verifyINTERSTELLAR = false
 				}
 			}
@@ -441,10 +452,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 				// Validate the header and either drop the peer or continue
 				if err := core.ValidateINTERSTELLARHeaderExtraData(pm.chainconfig, headers[0]); err != nil {
-					glog.V(logger.Debug).Infof("%v: verified to be on the other side of the INTERSTELLAR fork, dropping", p)
+					glog.V(logger.Debug).Infof("%v: verified to be on the other side of the INTERSTELLAR leap, dropping", p)
 					return err
 				}
-				glog.V(logger.Debug).Infof("%v: verified to be on the same side of the INTERSTELLAR fork", p)
+				glog.V(logger.Debug).Infof("%v: verified to be on the same side of the INTERSTELLAR leap", p)
 				return nil
 			}
 			// Irrelevant of the fork checks, send the header to the fetcher just in case
@@ -568,9 +579,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				return errResp(ErrDecode, "msg %v: %v", msg, err)
 			}
 			// Retrieve the requested block's receipts, skipping if unknown to us
-			results := core.GetBlockReceipts(pm.chaindb, hash)
+			results := core.GetBlockReceipts(pm.chaindb, hash, core.GetBlockNumber(pm.chaindb, hash))
 			if results == nil {
-				if header := pm.blockchain.GetHeader(hash); header == nil || header.ReceiptHash != types.EmptyRootHash {
+				if header := pm.blockchain.GetHeaderByHash(hash); header == nil || header.ReceiptHash != types.EmptyRootHash {
 					continue
 				}
 			}
@@ -596,38 +607,16 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 
 	case msg.Code == NewBlockHashesMsg:
-		// Retrieve and deserialize the remote new block hashes notification
-		type announce struct {
-			Hash   common.Hash
-			Number uint64
-		}
-		var announces = []announce{}
-
-		if p.version < ele62 {
-			// We're running the old protocol, make block number unknown (0)
-			var hashes []common.Hash
-			if err := msg.Decode(&hashes); err != nil {
-				return errResp(ErrDecode, "%v: %v", msg, err)
-			}
-			for _, hash := range hashes {
-				announces = append(announces, announce{hash, 0})
-			}
-		} else {
-			// Otherwise extract both block hash and number
-			var request newBlockHashesData
-			if err := msg.Decode(&request); err != nil {
-				return errResp(ErrDecode, "%v: %v", msg, err)
-			}
-			for _, block := range request {
-				announces = append(announces, announce{block.Hash, block.Number})
-			}
+		var announces newBlockHashesData
+		if err := msg.Decode(&announces); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		// Mark the hashes as present at the remote node
 		for _, block := range announces {
 			p.MarkBlock(block.Hash)
 		}
 		// Schedule all the unknown hashes for retrieval
-		unknown := make([]announce, 0, len(announces))
+		unknown := make(newBlockHashesData, 0, len(announces))
 		for _, block := range announces {
 			if !pm.blockchain.HasBlock(block.Hash) {
 				unknown = append(unknown, block)
@@ -642,9 +631,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		var request newBlockData
 		if err := msg.Decode(&request); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
-		}
-		if err := request.Block.ValidateFields(); err != nil {
-			return errResp(ErrDecode, "block validation %v: %v", msg, err)
 		}
 		request.Block.ReceivedAt = msg.ReceivedAt
 		request.Block.ReceivedFrom = p
@@ -667,7 +653,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			// a singe block (as the true TD is below the propagated block), however this
 			// scenario should easily be covered by the fetcher.
 			currentBlock := pm.blockchain.CurrentBlock()
-			if trueTD.Cmp(pm.blockchain.GetTd(currentBlock.Hash())) > 0 {
+			if trueTD.Cmp(pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())) > 0 {
 				go pm.synchronise(p)
 			}
 		}
@@ -707,8 +693,8 @@ func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
 	if propagate {
 		// Calculate the TD of the block (it's not imported yet, so block.Td is not valid)
 		var td *big.Int
-		if parent := pm.blockchain.GetBlock(block.ParentHash()); parent != nil {
-			td = new(big.Int).Add(block.Difficulty(), pm.blockchain.GetTd(block.ParentHash()))
+		if parent := pm.blockchain.GetBlock(block.ParentHash(), block.NumberU64()-1); parent != nil {
+			td = new(big.Int).Add(block.Difficulty(), pm.blockchain.GetTd(block.ParentHash(), block.NumberU64()-1))
 		} else {
 			glog.V(logger.Error).Infof("propagating dangling block #%d [%x]", block.NumberU64(), hash[:4])
 			return
@@ -764,7 +750,7 @@ func (self *ProtocolManager) txBroadcastLoop() {
 // EleNodeInfo represents a short summary of the Elementrem sub-protocol metadata known
 // about the host peer.
 type EleNodeInfo struct {
-	Network    int         `json:"network"`    // Elementrem network ID
+	Network    int         `json:"network"`    // Elementrem network ID (1=Frontier, 2=Morden, Ropsten=3)
 	Difficulty *big.Int    `json:"difficulty"` // Total difficulty of the host's blockchain
 	Genesis    common.Hash `json:"genesis"`    // SHA3 hash of the host's genesis block
 	Head       common.Hash `json:"head"`       // SHA3 hash of the host's best owned block
@@ -772,10 +758,11 @@ type EleNodeInfo struct {
 
 // NodeInfo retrieves some protocol metadata about the running host node.
 func (self *ProtocolManager) NodeInfo() *EleNodeInfo {
+	currentBlock := self.blockchain.CurrentBlock()
 	return &EleNodeInfo{
 		Network:    self.networkId,
-		Difficulty: self.blockchain.GetTd(self.blockchain.CurrentBlock().Hash()),
+		Difficulty: self.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64()),
 		Genesis:    self.blockchain.Genesis().Hash(),
-		Head:       self.blockchain.CurrentBlock().Hash(),
+		Head:       currentBlock.Hash(),
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -110,7 +110,7 @@ func (m *txSortedMap) Filter(filter func(*types.Transaction) bool) types.Transac
 	// If transactions were removed, the heap and cache are ruined
 	if len(removed) > 0 {
 		*m.index = make([]uint64, 0, len(m.items))
-		for nonce, _ := range m.items {
+		for nonce := range m.items {
 			*m.index = append(*m.index, nonce)
 		}
 		heap.Init(m.index)
@@ -216,7 +216,7 @@ func (m *txSortedMap) Flatten() types.Transactions {
 // txList is a "list" of transactions belonging to an account, sorted by account
 // nonce. The same type can be used both for storing contiguous transactions for
 // the executable/pending queue; and for storing gapped transactions for the non-
-// executable/future queue, with minor behavoiral changes.
+// executable/future queue, with minor behavioral changes.
 type txList struct {
 	strict  bool         // Whether nonces are strictly continuous or not
 	txs     *txSortedMap // Heap indexed sorted hash map of the transactions

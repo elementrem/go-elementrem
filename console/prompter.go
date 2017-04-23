@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -44,7 +44,7 @@ type UserPrompter interface {
 	PromptConfirm(prompt string) (bool, error)
 
 	// SetHistory sets the the input scrollback history that the prompter will allow
-	// the user to scoll back to.
+	// the user to scroll back to.
 	SetHistory(history []string)
 
 	// AppendHistory appends an entry to the scrollback history. It should be called
@@ -95,7 +95,7 @@ func newTerminalPrompter() *terminalPrompter {
 	}
 	p.SetCtrlCAborts(true)
 	p.SetTabCompletionStyle(liner.TabPrints)
-
+	p.SetMultiLineMode(true)
 	return p
 }
 
@@ -147,7 +147,7 @@ func (p *terminalPrompter) PromptConfirm(prompt string) (bool, error) {
 }
 
 // SetHistory sets the the input scrollback history that the prompter will allow
-// the user to scoll back to.
+// the user to scroll back to.
 func (p *terminalPrompter) SetHistory(history []string) {
 	p.State.ReadHistory(strings.NewReader(strings.Join(history, "\n")))
 }

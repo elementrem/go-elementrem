@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -80,7 +80,7 @@ func compactHexEncode(nibbles []byte) []byte {
 	}
 	l := (nl + 1) / 2
 	var str = make([]byte, l)
-	for i, _ := range str {
+	for i := range str {
 		b := nibbles[i*2] * 16
 		if nl > i*2 {
 			b += nibbles[i*2+1]

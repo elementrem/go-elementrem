@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -49,7 +49,7 @@ arguments. It will pass the mod argument as nil to the RPC method.
 The server offers the ServeCodec method which accepts a ServerCodec instance. It will
 read requests from the codec, process the request and sends the response back to the
 client using the codec. The server can execute requests concurrently. Responses
-can be send back to the client out of order.
+can be sent back to the client out of order.
 
 An example server which uses the JSON codec:
  type CalculatorService struct {}

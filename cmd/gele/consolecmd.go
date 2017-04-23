@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of go-elementrem.
 //
 // go-elementrem is free software: you can redistribute it and/or modify
@@ -19,41 +19,50 @@ package main
 import (
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/elementrem/go-elementrem/cmd/utils"
 	"github.com/elementrem/go-elementrem/console"
+	"github.com/elementrem/go-elementrem/node"
+	"github.com/elementrem/go-elementrem/rpc"
 	"gopkg.in/urfave/cli.v1"
 )
 
 var (
 	consoleCommand = cli.Command{
-		Action: localConsole,
-		Name:   "console",
-		Usage:  `Gele Console: interactive JavaScript environment`,
+		Action:    localConsole,
+		Name:      "console",
+		Usage:     "Start an interactive JavaScript environment",
+		ArgsUsage: "", // TODO: Write this!
+		Category:  "CONSOLE COMMANDS",
 		Description: `
 The Gele console is an interactive shell for the JavaScript runtime environment
 which exposes a node admin interface as well as the Ðapp JavaScript API.
-See https://github.com/elementrem/go-elementrem/wiki/Javascipt-Console
+See https://github.com/elementrem
 `,
 	}
 	attachCommand = cli.Command{
-		Action: remoteConsole,
-		Name:   "attach",
-		Usage:  `Gele Console: interactive JavaScript environment (connect to node)`,
+		Action:    remoteConsole,
+		Name:      "attach",
+		Usage:     "Start an interactive JavaScript environment (connect to node)",
+		ArgsUsage: "", // TODO: Write this!
+		Category:  "CONSOLE COMMANDS",
 		Description: `
 The Gele console is an interactive shell for the JavaScript runtime environment
 which exposes a node admin interface as well as the Ðapp JavaScript API.
-See https://github.com/elementrem/go-elementrem/wiki/Javascipt-Console.
+See https://github.com/elementrem
 This command allows to open a console on a running gele node.
-	`,
+`,
 	}
 	javascriptCommand = cli.Command{
-		Action: ephemeralConsole,
-		Name:   "js",
-		Usage:  `executes the given JavaScript files in the Gele JavaScript VM`,
+		Action:    ephemeralConsole,
+		Name:      "js",
+		Usage:     "Execute the specified JavaScript files",
+		ArgsUsage: "", // TODO: Write this!
+		Category:  "CONSOLE COMMANDS",
 		Description: `
 The JavaScript VM exposes a node admin interface as well as the Ðapp
-JavaScript API. See https://github.com/elementrem/go-elementrem/wiki/Javascipt-Console
+JavaScript API. See https://github.com/elementrem
 `,
 	}
 )
@@ -62,7 +71,7 @@ JavaScript API. See https://github.com/elementrem/go-elementrem/wiki/Javascipt-C
 // same time.
 func localConsole(ctx *cli.Context) error {
 	// Create and start the node based on the CLI flags
-	node := utils.MakeSystemNode(clientIdentifier, verString, relConfig, makeDefaultExtra(), ctx)
+	node := makeFullNode(ctx)
 	startNode(ctx, node)
 	defer node.Stop()
 
@@ -99,12 +108,12 @@ func localConsole(ctx *cli.Context) error {
 // console to it.
 func remoteConsole(ctx *cli.Context) error {
 	// Attach to a remotely running gele instance and start the JavaScript console
-	client, err := utils.NewRemoteRPCClient(ctx)
+	client, err := dialRPC(ctx.Args().First())
 	if err != nil {
 		utils.Fatalf("Unable to attach to remote gele: %v", err)
 	}
 	config := console.Config{
-		DataDir: utils.MustMakeDataDir(ctx),
+		DataDir: utils.MakeDataDir(ctx),
 		DocRoot: ctx.GlobalString(utils.JSpathFlag.Name),
 		Client:  client,
 		Preload: utils.MakeConsolePreloads(ctx),
@@ -127,12 +136,26 @@ func remoteConsole(ctx *cli.Context) error {
 	return nil
 }
 
+// dialRPC returns a RPC client which connects to the given endpoint.
+// The check for empty endpoint implements the defaulting logic
+// for "gele attach" and "gele monitor" with no argument.
+func dialRPC(endpoint string) (*rpc.Client, error) {
+	if endpoint == "" {
+		endpoint = node.DefaultIPCEndpoint(clientIdentifier)
+	} else if strings.HasPrefix(endpoint, "rpc:") || strings.HasPrefix(endpoint, "ipc:") {
+		// Backwards compatibility with gele < 1.5 which required
+		// these prefixes.
+		endpoint = endpoint[4:]
+	}
+	return rpc.Dial(endpoint)
+}
+
 // ephemeralConsole starts a new gele node, attaches an ephemeral JavaScript
 // console to it, and each of the files specified as arguments and tears the
 // everything down.
 func ephemeralConsole(ctx *cli.Context) error {
 	// Create and start the node based on the CLI flags
-	node := utils.MakeSystemNode(clientIdentifier, verString, relConfig, makeDefaultExtra(), ctx)
+	node := makeFullNode(ctx)
 	startNode(ctx, node)
 	defer node.Stop()
 

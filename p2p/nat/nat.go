@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -105,7 +105,7 @@ func Map(m Interface, c chan struct{}, protocol string, extport, intport int, na
 		glog.V(logger.Debug).Infof("deleting port mapping: %s %d -> %d (%s) using %s\n", protocol, extport, intport, name, m)
 		m.DeleteMapping(protocol, extport, intport)
 	}()
-	if err := m.AddMapping(protocol, intport, extport, name, mapTimeout); err != nil {
+	if err := m.AddMapping(protocol, extport, intport, name, mapTimeout); err != nil {
 		glog.V(logger.Debug).Infof("network port %s:%d could not be mapped: %v\n", protocol, intport, err)
 	} else {
 		glog.V(logger.Info).Infof("mapped network port %s:%d -> %d (%s) using %s\n", protocol, extport, intport, name, m)
@@ -118,7 +118,7 @@ func Map(m Interface, c chan struct{}, protocol string, extport, intport int, na
 			}
 		case <-refresh.C:
 			glog.V(logger.Detail).Infof("refresh port mapping %s:%d -> %d (%s) using %s\n", protocol, extport, intport, name, m)
-			if err := m.AddMapping(protocol, intport, extport, name, mapTimeout); err != nil {
+			if err := m.AddMapping(protocol, extport, intport, name, mapTimeout); err != nil {
 				glog.V(logger.Debug).Infof("network port %s:%d could not be mapped: %v\n", protocol, intport, err)
 			}
 			refresh.Reset(mapUpdateInterval)
@@ -197,11 +197,7 @@ type autodisc struct {
 
 func startautodisc(what string, doit func() Interface) Interface {
 	// TODO: monitor network configuration and rerun doit when it changes.
-	ad := &autodisc{what: what, doit: doit}
-	// Start the auto discovery as early as possible so it is already
-	// in progress when the rest of the stack calls the methods.
-	go ad.wait()
-	return ad
+	return &autodisc{what: what, doit: doit}
 }
 
 func (n *autodisc) AddMapping(protocol string, extport, intport int, name string, lifetime time.Duration) error {

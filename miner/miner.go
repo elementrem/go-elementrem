@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -22,11 +22,13 @@ import (
 	"math/big"
 	"sync/atomic"
 
+	"github.com/elementrem/go-elementrem/accounts"
 	"github.com/elementrem/go-elementrem/common"
 	"github.com/elementrem/go-elementrem/core"
 	"github.com/elementrem/go-elementrem/core/state"
 	"github.com/elementrem/go-elementrem/core/types"
 	"github.com/elementrem/go-elementrem/ele/downloader"
+	"github.com/elementrem/go-elementrem/eledb"
 	"github.com/elementrem/go-elementrem/event"
 	"github.com/elementrem/go-elementrem/logger"
 	"github.com/elementrem/go-elementrem/logger/glog"
@@ -34,25 +36,38 @@ import (
 	"github.com/elementrem/go-elementrem/pow"
 )
 
+// Backend wraps all methods required for mining.
+type Backend interface {
+	AccountManager() *accounts.Manager
+	BlockChain() *core.BlockChain
+	TxPool() *core.TxPool
+	ChainDb() eledb.Database
+}
+
+// Miner creates blocks and searches for proof-of-work values.
 type Miner struct {
 	mux *event.TypeMux
 
 	worker *worker
 
-	MinAcceptedGasPrice *big.Int
-
 	threads  int
 	coinbase common.Address
 	mining   int32
-	ele      core.Backend
+	ele      Backend
 	pow      pow.PoW
 
 	canStart    int32 // can start indicates whether we can start the mining operation
 	shouldStart int32 // should start indicates whether we should start after sync
 }
 
-func New(ele core.Backend, config *core.ChainConfig, mux *event.TypeMux, pow pow.PoW) *Miner {
-	miner := &Miner{ele: ele, mux: mux, pow: pow, worker: newWorker(config, common.Address{}, ele), canStart: 1}
+func New(ele Backend, config *params.ChainConfig, mux *event.TypeMux, pow pow.PoW) *Miner {
+	miner := &Miner{
+		ele:      ele,
+		mux:      mux,
+		pow:      pow,
+		worker:   newWorker(config, common.Address{}, ele, mux),
+		canStart: 1,
+	}
 	go miner.update()
 
 	return miner
@@ -90,26 +105,28 @@ out:
 	}
 }
 
+func (m *Miner) GasPrice() *big.Int {
+	return new(big.Int).Set(m.worker.gasPrice)
+}
+
 func (m *Miner) SetGasPrice(price *big.Int) {
 	// FIXME block tests set a nil gas price. Quick dirty fix
 	if price == nil {
 		return
 	}
-
 	m.worker.setGasPrice(price)
 }
 
 func (self *Miner) Start(coinbase common.Address, threads int) {
 	atomic.StoreInt32(&self.shouldStart, 1)
-	self.threads = threads
-	self.worker.coinbase = coinbase
+	self.worker.setElementbase(coinbase)
 	self.coinbase = coinbase
+	self.threads = threads
 
 	if atomic.LoadInt32(&self.canStart) == 0 {
 		glog.V(logger.Info).Infoln("Can not start mining operation due to network sync (starts when finished)")
 		return
 	}
-
 	atomic.StoreInt32(&self.mining, 1)
 
 	for i := 0; i < threads; i++ {
@@ -117,9 +134,7 @@ func (self *Miner) Start(coinbase common.Address, threads int) {
 	}
 
 	glog.V(logger.Info).Infof("Starting mining operation (CPU=%d TOT=%d)\n", threads, len(self.worker.agents))
-
 	self.worker.start()
-
 	self.worker.commitNewWork()
 }
 
@@ -159,14 +174,22 @@ func (self *Miner) SetExtra(extra []byte) error {
 	if uint64(len(extra)) > params.MaximumExtraDataSize.Uint64() {
 		return fmt.Errorf("Extra exceeds max length. %d > %v", len(extra), params.MaximumExtraDataSize)
 	}
-
-	self.worker.extra = extra
+	self.worker.setExtra(extra)
 	return nil
 }
 
 // Pending returns the currently pending block and associated state.
 func (self *Miner) Pending() (*types.Block, *state.StateDB) {
 	return self.worker.pending()
+}
+
+// PendingBlock returns the currently pending block.
+//
+// Note, to access both the pending block and the pending state
+// simultaneously, please use Pending(), as the pending state can
+// change between multiple method calls
+func (self *Miner) PendingBlock() *types.Block {
+	return self.worker.pendingBlock()
 }
 
 func (self *Miner) SetElementbase(addr common.Address) {

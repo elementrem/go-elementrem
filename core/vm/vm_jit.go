@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -25,7 +25,7 @@ int   evmjit_run(void* _jit, void* _data, void* _env);
 void  evmjit_destroy(void* _jit);
 
 // Shared library evmjit (e.g. libevmjit.so) is expected to be installed in /usr/local/lib
-// More: https://github.com/elementrem/evmjit
+// More: https://github.com/elementrem
 #cgo LDFLAGS: -levmjit
 */
 import "C"
@@ -44,7 +44,7 @@ import (
 )
 
 type JitVm struct {
-	env        Environment
+	env        EVM
 	me         ContextRef
 	callerAddr []byte
 	price      *big.Int
@@ -161,7 +161,7 @@ func assert(condition bool, message string) {
 	}
 }
 
-func NewJitVm(env Environment) *JitVm {
+func NewJitVm(env EVM) *JitVm {
 	return &JitVm{env: env}
 }
 
@@ -235,7 +235,7 @@ func (self *JitVm) Endl() VirtualMachine {
 	return self
 }
 
-func (self *JitVm) Env() Environment {
+func (self *JitVm) Env() EVM {
 	return self.env
 }
 

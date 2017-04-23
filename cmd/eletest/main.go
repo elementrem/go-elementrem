@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of go-elementrem.
 //
 // go-elementrem is free software: you can redistribute it and/or modify
@@ -74,12 +74,13 @@ func runTestWithReader(test string, r io.Reader) error {
 	var err error
 	switch strings.ToLower(test) {
 	case "bk", "block", "blocktest", "blockchaintest", "blocktests", "blockchaintests":
-		err = tests.RunBlockTestWithReader(params.MainNetHomesteadBlock, params.MainNetINTERSTELLARleapBlock, r, skipTests)
+		err = tests.RunBlockTestWithReader(params.MainNetHomesteadBlock, params.MainNetINTERSTELLARleapBlock, params.MainNetHomesteadGasRepriceBlock, r, skipTests)
 	case "st", "state", "statetest", "statetests":
-		rs := tests.RuleSet{HomesteadBlock: params.MainNetHomesteadBlock, INTERSTELLARleapBlock: params.MainNetINTERSTELLARleapBlock, INTERSTELLARleapSupport: true}
+		rs := &params.ChainConfig{HomesteadBlock: params.MainNetHomesteadBlock, INTERSTELLARleapBlock: params.MainNetINTERSTELLARleapBlock, INTERSTELLARleapSupport: true, EIP150Block: params.MainNetHomesteadGasRepriceBlock}
 		err = tests.RunStateTestWithReader(rs, r, skipTests)
 	case "tx", "transactiontest", "transactiontests":
-		err = tests.RunTransactionTestsWithReader(r, skipTests)
+		rs := &params.ChainConfig{HomesteadBlock: params.MainNetHomesteadBlock, INTERSTELLARleapBlock: params.MainNetINTERSTELLARleapBlock, INTERSTELLARleapSupport: true, EIP150Block: params.MainNetHomesteadGasRepriceBlock}
+		err = tests.RunTransactionTestsWithReader(rs, r, skipTests)
 	case "vm", "vmtest", "vmtests":
 		err = tests.RunVmTestWithReader(r, skipTests)
 	case "rlp", "rlptest", "rlptests":
@@ -87,12 +88,7 @@ func runTestWithReader(test string, r io.Reader) error {
 	default:
 		err = fmt.Errorf("Invalid test type specified: %v", test)
 	}
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func getFiles(path string) ([]string, error) {
@@ -208,7 +204,7 @@ func main() {
 	app.Usage = "go-elementrem test interface"
 	app.Action = setupApp
 	app.Version = "0.2.0"
-	app.Author = "elementrem team"
+	app.Author = "go-elementrem dev"
 
 	app.Flags = []cli.Flag{
 		TestFlag,

@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -205,7 +205,7 @@ func (p *peer) FetchNodeData(request *fetchRequest) error {
 
 	// Convert the hash set to a retrievable slice
 	hashes := make([]common.Hash, 0, len(request.Hashes))
-	for hash, _ := range request.Hashes {
+	for hash := range request.Hashes {
 		hashes = append(hashes, hash)
 	}
 	go p.getNodeData(hashes)
@@ -314,7 +314,7 @@ func (p *peer) MarkLacking(hash common.Hash) {
 	defer p.lock.Unlock()
 
 	for len(p.lacking) >= maxLackingHashes {
-		for drop, _ := range p.lacking {
+		for drop := range p.lacking {
 			delete(p.lacking, drop)
 			break
 		}

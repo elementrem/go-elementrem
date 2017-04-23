@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -82,10 +82,12 @@ func (ms *ManagedState) NewNonce(addr common.Address) uint64 {
 	return uint64(len(account.nonces)-1) + account.nstart
 }
 
-// GetNonce returns the canonical nonce for the managed or unmanaged account
+// GetNonce returns the canonical nonce for the managed or unmanaged account.
+//
+// Because GetNonce mutates the DB, we must take a write lock.
 func (ms *ManagedState) GetNonce(addr common.Address) uint64 {
-	ms.mu.RLock()
-	defer ms.mu.RUnlock()
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
 
 	if ms.hasAccount(addr) {
 		account := ms.getAccount(addr)

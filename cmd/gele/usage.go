@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of go-elementrem.
 //
 // go-elementrem is free software: you can redistribute it and/or modify
@@ -29,6 +29,8 @@ import (
 // AppHelpTemplate is the test template for the default, global app help topic.
 var AppHelpTemplate = `NAME:
    {{.App.Name}} - {{.App.Usage}}
+
+   Copyright 2016-2017 The go-elementrem Authors
 
 USAGE:
    {{.App.HelpName}} [options]{{if .App.Commands}} command [command options]{{end}} {{if .App.ArgsUsage}}{{.App.ArgsUsage}}{{else}}[arguments...]{{end}}
@@ -65,14 +67,21 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.DataDirFlag,
 			utils.KeyStoreDirFlag,
 			utils.NetworkIdFlag,
-			utils.OlympicFlag,
 			utils.TestNetFlag,
 			utils.DevModeFlag,
 			utils.IdentityFlag,
 			utils.FastSyncFlag,
+			utils.LightModeFlag,
+			utils.LightServFlag,
+			utils.LightPeersFlag,
 			utils.LightKDFFlag,
+		},
+	},
+	{
+		Name: "PERFORMANCE TUNING",
+		Flags: []cli.Flag{
 			utils.CacheFlag,
-			utils.BlockchainVersionFlag,
+			utils.TrieCacheGenFlag,
 		},
 	},
 	{
@@ -112,6 +121,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.MaxPendingPeersFlag,
 			utils.NATFlag,
 			utils.NoDiscoverFlag,
+			utils.DiscoveryV5Flag,
 			utils.NodeKeyFileFlag,
 			utils.NodeKeyHexFlag,
 		},
@@ -121,7 +131,6 @@ var AppHelpFlagGroups = []flagGroup{
 		Flags: []cli.Flag{
 			utils.MiningEnabledFlag,
 			utils.MinerThreadsFlag,
-			utils.MiningGPUFlag,
 			utils.AutoDAGFlag,
 			utils.ElementbaseFlag,
 			utils.TargetGasLimitFlag,
@@ -146,11 +155,13 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.VMEnableJitFlag,
 			utils.VMForceJitFlag,
 			utils.VMJitCacheFlag,
+			utils.VMEnableDebugFlag,
 		},
 	},
 	{
 		Name: "LOGGING AND DEBUGGING",
 		Flags: append([]cli.Flag{
+			utils.EleStatsURLFlag,
 			utils.MetricsEnabledFlag,
 			utils.FakePoWFlag,
 		}, debug.Flags...),
@@ -159,7 +170,6 @@ var AppHelpFlagGroups = []flagGroup{
 		Name: "EXPERIMENTAL",
 		Flags: []cli.Flag{
 			utils.WhisperEnabledFlag,
-			utils.NatspecEnabledFlag,
 		},
 	},
 	{

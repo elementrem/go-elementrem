@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -19,12 +19,9 @@ package core
 import (
 	"math/big"
 
-	"github.com/elementrem/go-elementrem/accounts"
 	"github.com/elementrem/go-elementrem/core/state"
 	"github.com/elementrem/go-elementrem/core/types"
 	"github.com/elementrem/go-elementrem/core/vm"
-	"github.com/elementrem/go-elementrem/eledb"
-	"github.com/elementrem/go-elementrem/event"
 )
 
 // Validator is an interface which defines the standard for block validation.
@@ -61,18 +58,5 @@ type HeaderValidator interface {
 // of gas used in the process and return an error if any of the internal rules
 // failed.
 type Processor interface {
-	Process(block *types.Block, statedb *state.StateDB, cfg vm.Config) (types.Receipts, vm.Logs, *big.Int, error)
-}
-
-// Backend is an interface defining the basic functionality for an operable node
-// with all the functionality to be a functional, valid Elementrem operator.
-//
-// TODO Remove this
-type Backend interface {
-	AccountManager() *accounts.Manager
-	BlockChain() *BlockChain
-	TxPool() *TxPool
-	ChainDb() eledb.Database
-	DappDb() eledb.Database
-	EventMux() *event.TypeMux
+	Process(block *types.Block, statedb *state.StateDB, cfg vm.Config) (types.Receipts, []*types.Log, *big.Int, error)
 }

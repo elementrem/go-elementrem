@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -25,17 +25,13 @@ import (
 	"github.com/elementrem/go-elementrem/core/vm"
 	"github.com/elementrem/go-elementrem/crypto"
 	"github.com/elementrem/go-elementrem/eledb"
+	"github.com/elementrem/go-elementrem/params"
 )
-
-// The default, always homestead, rule set for the vm env
-type ruleSet struct{}
-
-func (ruleSet) IsHomestead(*big.Int) bool { return true }
 
 // Config is a basic type specifying certain configuration flags for running
 // the EVM.
 type Config struct {
-	RuleSet     vm.RuleSet
+	ChainConfig *params.ChainConfig
 	Difficulty  *big.Int
 	Origin      common.Address
 	Coinbase    common.Address
@@ -46,6 +42,7 @@ type Config struct {
 	Value       *big.Int
 	DisableJit  bool // "disable" so it's enabled by default
 	Debug       bool
+	EVMConfig   vm.Config
 
 	State     *state.StateDB
 	GetHashFn func(n uint64) common.Hash
@@ -53,8 +50,16 @@ type Config struct {
 
 // sets defaults on the config
 func setDefaults(cfg *Config) {
-	if cfg.RuleSet == nil {
-		cfg.RuleSet = ruleSet{}
+	if cfg.ChainConfig == nil {
+		cfg.ChainConfig = &params.ChainConfig{
+			ChainId:        big.NewInt(1),
+			HomesteadBlock: new(big.Int),
+			INTERSTELLARleapBlock:   new(big.Int),
+			INTERSTELLARleapSupport: false,
+			EIP150Block:    new(big.Int),
+			EIP155Block:    new(big.Int),
+			EIP158Block:    new(big.Int),
+		}
 	}
 
 	if cfg.Difficulty == nil {
@@ -112,11 +117,35 @@ func Execute(code, input []byte, cfg *Config) ([]byte, *state.StateDB, error) {
 		receiver.Address(),
 		input,
 		cfg.GasLimit,
-		cfg.GasPrice,
 		cfg.Value,
 	)
 
 	return ret, cfg.State, err
+}
+
+// Create executes the code using the EVM create method
+func Create(input []byte, cfg *Config) ([]byte, common.Address, error) {
+	if cfg == nil {
+		cfg = new(Config)
+	}
+	setDefaults(cfg)
+
+	if cfg.State == nil {
+		db, _ := eledb.NewMemDatabase()
+		cfg.State, _ = state.New(common.Hash{}, db)
+	}
+	var (
+		vmenv  = NewEnv(cfg, cfg.State)
+		sender = cfg.State.CreateAccount(cfg.Origin)
+	)
+
+	// Call the code with the given configuration.
+	return vmenv.Create(
+		sender,
+		input,
+		cfg.GasLimit,
+		cfg.Value,
+	)
 }
 
 // Call executes the code given by the contract's address. It will return the
@@ -136,7 +165,6 @@ func Call(address common.Address, input []byte, cfg *Config) ([]byte, error) {
 		address,
 		input,
 		cfg.GasLimit,
-		cfg.GasPrice,
 		cfg.Value,
 	)
 

@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -33,8 +33,8 @@ import (
 //      with the fork specific extra-data set
 //   b) if the node is pro-fork, require blocks in the specific range to have the
 //      unique extra-data set.
-func ValidateINTERSTELLARHeaderExtraData(config *ChainConfig, header *types.Header) error {
-	// Short circuit validation if the node doesn't care about the INTERSTELLAR fork
+func ValidateINTERSTELLARHeaderExtraData(config *params.ChainConfig, header *types.Header) error {
+	// Short circuit validation if the node doesn't care about the INTERSTELLAR leap
 	if config.INTERSTELLARleapBlock == nil {
 		return nil
 	}
@@ -45,12 +45,12 @@ func ValidateINTERSTELLARHeaderExtraData(config *ChainConfig, header *types.Head
 	}
 	// Depending whether we support or oppose the fork, validate the extra-data contents
 	if config.INTERSTELLARleapSupport {
-		if bytes.Compare(header.Extra, params.INTERSTELLARleapBlockExtra) != 0 {
-			return ValidationError("INTERSTELLAR pro-fork bad block extra-data: 0x%x", header.Extra)
+		if !bytes.Equal(header.Extra, params.INTERSTELLARleapBlockExtra) {
+			return ValidationError("INTERSTELLAR pro-leap bad block extra-data: 0x%x", header.Extra)
 		}
 	} else {
-		if bytes.Compare(header.Extra, params.INTERSTELLARleapBlockExtra) == 0 {
-			return ValidationError("INTERSTELLAR no-fork bad block extra-data: 0x%x", header.Extra)
+		if bytes.Equal(header.Extra, params.INTERSTELLARleapBlockExtra) {
+			return ValidationError("INTERSTELLAR no-leap bad block extra-data: 0x%x", header.Extra)
 		}
 	}
 	// All ok, header has the same extra-data we expect

@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 )
 
 var (
@@ -88,9 +89,14 @@ func LocalEnv() Environment {
 			env.Branch = b
 		}
 	}
-	// Note that we don't get the current git tag. It would slow down
-	// builds and isn't used by anything.
+	if env.Tag == "" {
+		env.Tag = firstLine(RunGit("tag", "-l", "--points-at", "HEAD"))
+	}
 	return env
+}
+
+func firstLine(s string) string {
+	return strings.Split(s, "\n")[0]
 }
 
 func applyEnvFlags(env Environment) Environment {

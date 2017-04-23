@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@ func (self Generic) Compare(f Filter) bool {
 		strMatch = false
 	}
 
-	for k, _ := range self.Data {
+	for k := range self.Data {
 		if _, ok := filter.Data[k]; !ok {
 			return false
 		}

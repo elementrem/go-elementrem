@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -27,7 +27,13 @@ import (
 	"time"
 
 	"github.com/elementrem/go-elementrem/common"
+	"github.com/elementrem/go-elementrem/internal/jsre/deps"
 	"github.com/robertkrimen/otto"
+)
+
+var (
+	BigNumber_JS = deps.MustAsset("bignumber.js")
+	Web3_JS      = deps.MustAsset("web3.js")
 )
 
 /*
@@ -71,7 +77,7 @@ func New(assetPath string, output io.Writer) *JSRE {
 	}
 	go re.runEventLoop()
 	re.Set("loadScript", re.loadScript)
-	re.Set("inspect", prettyPrintJS)
+	re.Set("inspect", re.prettyPrintJS)
 	return re
 }
 

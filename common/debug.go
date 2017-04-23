@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -26,7 +26,7 @@ import (
 
 // Report gives off a warning requesting the user to submit an issue to the github tracker.
 func Report(extra ...interface{}) {
-	fmt.Fprintln(os.Stderr, "You've encountered a sought after, hard to reproduce bug. Please report this to the developers <3 https://github.com/elementrem/go-elementrem/issues")
+	fmt.Fprintln(os.Stderr, "You've encountered a sought after, hard to reproduce bug. Please report this to the developers <3 https://github.com/elementrem")
 	fmt.Fprintln(os.Stderr, extra...)
 
 	_, file, line, _ := runtime.Caller(1)
