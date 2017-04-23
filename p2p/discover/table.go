@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -433,7 +433,7 @@ func (tab *Table) bondall(nodes []*Node) (result []*Node) {
 			rc <- nn
 		}(nodes[i])
 	}
-	for _ = range nodes {
+	for range nodes {
 		if n := <-rc; n != nil {
 			result = append(result, n)
 		}

@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -19,10 +19,8 @@ package common
 import (
 	"fmt"
 	"os"
-	"os/user"
 	"path/filepath"
 	"runtime"
-	"strings"
 )
 
 // MakeName creates a node name that follows the elementrem convention
@@ -30,21 +28,6 @@ import (
 // the name.
 func MakeName(name, version string) string {
 	return fmt.Sprintf("%s/v%s/%s/%s", name, version, runtime.GOOS, runtime.Version())
-}
-
-func ExpandHomePath(p string) (path string) {
-	path = p
-	sep := string(os.PathSeparator)
-
-	// Check in case of paths like "/something/~/something/"
-	if len(p) > 1 && p[:1+len(sep)] == "~"+sep {
-		usr, _ := user.Current()
-		dir := usr.HomeDir
-
-		path = strings.Replace(p, "~", dir, 1)
-	}
-
-	return
 }
 
 func FileExist(filePath string) bool {
@@ -61,14 +44,4 @@ func AbsolutePath(Datadir string, filename string) string {
 		return filename
 	}
 	return filepath.Join(Datadir, filename)
-}
-
-func HomeDir() string {
-	if home := os.Getenv("HOME"); home != "" {
-		return home
-	}
-	if usr, err := user.Current(); err == nil {
-		return usr.HomeDir
-	}
-	return ""
 }

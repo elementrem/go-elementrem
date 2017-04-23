@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -26,6 +26,7 @@ import (
 	"github.com/elementrem/go-elementrem/logger"
 	"github.com/elementrem/go-elementrem/logger/glog"
 	"github.com/rcrowley/go-metrics"
+	"github.com/rcrowley/go-metrics/exp"
 )
 
 // MetricsEnabledFlag is the CLI flag name to use to enable metrics collections.
@@ -44,6 +45,16 @@ func init() {
 			Enabled = true
 		}
 	}
+	exp.Exp(metrics.DefaultRegistry)
+}
+
+// NewCounter create a new metrics Counter, either a real one of a NOP stub depending
+// on the metrics flag.
+func NewCounter(name string) metrics.Counter {
+	if !Enabled {
+		return new(metrics.NilCounter)
+	}
+	return metrics.GetOrRegisterCounter(name, metrics.DefaultRegistry)
 }
 
 // NewMeter create a new metrics Meter, either a real one of a NOP stub depending

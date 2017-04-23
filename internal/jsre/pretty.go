@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -73,10 +73,10 @@ func jsErrorString(err error) string {
 	return err.Error()
 }
 
-func prettyPrintJS(call otto.FunctionCall, w io.Writer) otto.Value {
+func (re *JSRE) prettyPrintJS(call otto.FunctionCall) otto.Value {
 	for _, v := range call.ArgumentList {
-		prettyPrint(call.Otto, v, w)
-		fmt.Fprintln(w)
+		prettyPrint(call.Otto, v, re.output)
+		fmt.Fprintln(re.output)
 	}
 	return otto.UndefinedValue()
 }
@@ -116,7 +116,7 @@ func (ctx ppctx) printValue(v otto.Value, level int, inArray bool) {
 
 func (ctx ppctx) printObject(obj *otto.Object, level int, inArray bool) {
 	switch obj.Class() {
-	case "Array":
+	case "Array", "GoArray":
 		lv, _ := obj.Get("length")
 		len, _ := lv.ToInteger()
 		if len == 0 {

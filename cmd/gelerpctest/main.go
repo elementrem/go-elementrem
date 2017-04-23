@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of go-elementrem.
 //
 // go-elementrem is free software: you can redistribute it and/or modify
@@ -19,14 +19,11 @@ package main
 
 import (
 	"flag"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
 
-	"github.com/elementrem/go-elementrem/accounts"
-	"github.com/elementrem/go-elementrem/common"
-	"github.com/elementrem/go-elementrem/core"
+	"github.com/elementrem/go-elementrem/accounts/keystore"
 	"github.com/elementrem/go-elementrem/crypto"
 	"github.com/elementrem/go-elementrem/ele"
 	"github.com/elementrem/go-elementrem/eledb"
@@ -34,7 +31,7 @@ import (
 	"github.com/elementrem/go-elementrem/node"
 	"github.com/elementrem/go-elementrem/params"
 	"github.com/elementrem/go-elementrem/tests"
-	"github.com/elementrem/go-elementrem/whisper"
+	whisper "github.com/elementrem/go-elementrem/whisper/whisperv2"
 )
 
 const defaultTestKey = "b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291"
@@ -61,14 +58,8 @@ func main() {
 	if !found {
 		log.Fatalf("Requested test (%s) not found within suite", *testName)
 	}
-	// Create the protocol stack to run the test with
-	keydir, err := ioutil.TempDir("", "")
-	if err != nil {
-		log.Fatalf("Failed to create temporary keystore directory: %v", err)
-	}
-	defer os.RemoveAll(keydir)
 
-	stack, err := MakeSystemNode(keydir, *testKey, test)
+	stack, err := MakeSystemNode(*testKey, test)
 	if err != nil {
 		log.Fatalf("Failed to assemble test stack: %v", err)
 	}
@@ -92,33 +83,35 @@ func main() {
 
 // MakeSystemNode configures a protocol stack for the RPC tests based on a given
 // keystore path and initial pre-state.
-func MakeSystemNode(keydir string, privkey string, test *tests.BlockTest) (*node.Node, error) {
+func MakeSystemNode(privkey string, test *tests.BlockTest) (*node.Node, error) {
 	// Create a networkless protocol stack
 	stack, err := node.New(&node.Config{
-		IPCPath:     node.DefaultIPCEndpoint(),
-		HTTPHost:    common.DefaultHTTPHost,
-		HTTPPort:    common.DefaultHTTPPort,
-		HTTPModules: []string{"admin", "db", "ele", "debug", "miner", "net", "shh", "txpool", "personal", "web3"},
-		WSHost:      common.DefaultWSHost,
-		WSPort:      common.DefaultWSPort,
-		WSModules:   []string{"admin", "db", "ele", "debug", "miner", "net", "shh", "txpool", "personal", "web3"},
-		NoDiscovery: true,
+		UseLightweightKDF: true,
+		IPCPath:           node.DefaultIPCEndpoint(""),
+		HTTPHost:          node.DefaultHTTPHost,
+		HTTPPort:          node.DefaultHTTPPort,
+		HTTPModules:       []string{"admin", "db", "ele", "debug", "miner", "net", "shh", "txpool", "personal", "web3"},
+		WSHost:            node.DefaultWSHost,
+		WSPort:            node.DefaultWSPort,
+		WSModules:         []string{"admin", "db", "ele", "debug", "miner", "net", "shh", "txpool", "personal", "web3"},
+		NoDiscovery:       true,
 	})
 	if err != nil {
 		return nil, err
 	}
 	// Create the keystore and inject an unlocked account if requested
-	accman := accounts.NewPlaintextManager(keydir)
+	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+
 	if len(privkey) > 0 {
 		key, err := crypto.HexToECDSA(privkey)
 		if err != nil {
 			return nil, err
 		}
-		a, err := accman.ImportECDSA(key, "")
+		a, err := ks.ImportECDSA(key, "")
 		if err != nil {
 			return nil, err
 		}
-		if err := accman.Unlock(a, ""); err != nil {
+		if err := ks.Unlock(a, ""); err != nil {
 			return nil, err
 		}
 	}
@@ -130,8 +123,7 @@ func MakeSystemNode(keydir string, privkey string, test *tests.BlockTest) (*node
 	eleConf := &ele.Config{
 		TestGenesisState: db,
 		TestGenesisBlock: test.Genesis,
-		ChainConfig:      &core.ChainConfig{HomesteadBlock: params.MainNetHomesteadBlock},
-		AccountManager:   accman,
+		ChainConfig:      &params.ChainConfig{HomesteadBlock: params.MainNetHomesteadBlock},
 	}
 	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) { return ele.New(ctx, eleConf) }); err != nil {
 		return nil, err

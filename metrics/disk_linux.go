@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -47,15 +47,16 @@ func ReadDiskStats(stats *DiskStats) error {
 			}
 			return err
 		}
-		key, value := "", int64(0)
-		if parts := strings.Split(line, ":"); len(parts) != 2 {
+		parts := strings.Split(line, ":")
+		if len(parts) != 2 {
 			continue
-		} else {
-			key = strings.TrimSpace(parts[0])
-			if value, err = strconv.ParseInt(strings.TrimSpace(parts[1]), 10, 64); err != nil {
-				return err
-			}
 		}
+		key := strings.TrimSpace(parts[0])
+		value, err := strconv.ParseInt(strings.TrimSpace(parts[1]), 10, 64)
+		if err != nil {
+			return err
+		}
+
 		// Update the counter based on the key
 		switch key {
 		case "syscr":

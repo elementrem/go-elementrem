@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -16,13 +16,12 @@
 
 package vm
 
-import (
-	"errors"
-	"fmt"
+import "errors"
 
-	"github.com/elementrem/go-elementrem/params"
+var (
+	ErrOutOfGas            = errors.New("out of gas")
+	ErrCodeStoreOutOfGas   = errors.New("contract creation code storage out of gas")
+	ErrDepth               = errors.New("max call depth exceeded")
+	ErrTraceLimitReached   = errors.New("the number of logs reached the specified limit")
+	ErrInsufficientBalance = errors.New("insufficient balance for transfer")
 )
-
-var OutOfGasError = errors.New("Out of gas")
-var CodeStoreOutOfGasError = errors.New("Contract creation code storage out of gas")
-var DepthError = fmt.Errorf("Max call depth exceeded (%d)", params.CallCreateDepth)

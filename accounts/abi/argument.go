@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -31,8 +31,9 @@ type Argument struct {
 
 func (a *Argument) UnmarshalJSON(data []byte) error {
 	var extarg struct {
-		Name string
-		Type string
+		Name    string
+		Type    string
+		Indexed bool
 	}
 	err := json.Unmarshal(data, &extarg)
 	if err != nil {
@@ -44,6 +45,7 @@ func (a *Argument) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	a.Name = extarg.Name
+	a.Indexed = extarg.Indexed
 
 	return nil
 }

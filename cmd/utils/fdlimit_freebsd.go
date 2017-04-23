@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of go-elementrem.
 //
 // go-elementrem is free software: you can redistribute it and/or modify

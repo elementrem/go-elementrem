@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -18,7 +18,6 @@
 package ele
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"math/big"
@@ -32,22 +31,22 @@ import (
 	"github.com/elementrem/elhash"
 	"github.com/elementrem/go-elementrem/accounts"
 	"github.com/elementrem/go-elementrem/common"
-	"github.com/elementrem/go-elementrem/common/compiler"
-	"github.com/elementrem/go-elementrem/common/httpclient"
-	"github.com/elementrem/go-elementrem/common/registrar/elereg"
 	"github.com/elementrem/go-elementrem/core"
 	"github.com/elementrem/go-elementrem/core/types"
 	"github.com/elementrem/go-elementrem/core/vm"
 	"github.com/elementrem/go-elementrem/ele/downloader"
 	"github.com/elementrem/go-elementrem/ele/filters"
+	"github.com/elementrem/go-elementrem/ele/gasprice"
 	"github.com/elementrem/go-elementrem/eledb"
 	"github.com/elementrem/go-elementrem/event"
+	"github.com/elementrem/go-elementrem/internal/eleapi"
 	"github.com/elementrem/go-elementrem/logger"
 	"github.com/elementrem/go-elementrem/logger/glog"
 	"github.com/elementrem/go-elementrem/miner"
 	"github.com/elementrem/go-elementrem/node"
 	"github.com/elementrem/go-elementrem/p2p"
-	"github.com/elementrem/go-elementrem/rlp"
+	"github.com/elementrem/go-elementrem/params"
+	"github.com/elementrem/go-elementrem/pow"
 	"github.com/elementrem/go-elementrem/rpc"
 )
 
@@ -65,29 +64,31 @@ var (
 )
 
 type Config struct {
-	ChainConfig *core.ChainConfig // chain configuration
+	ChainConfig *params.ChainConfig // chain configuration
 
-	NetworkId int    // Network ID to use for selecting peers to connect to
-	Genesis   string // Genesis JSON to seed the chain database with
-	FastSync  bool   // Enables the state download based fast synchronisation algorithm
+	NetworkId  int    // Network ID to use for selecting peers to connect to
+	Genesis    string // Genesis JSON to seed the chain database with
+	FastSync   bool   // Enables the state download based fast synchronisation algorithm
+	LightMode  bool   // Running in light client mode
+	LightServ  int    // Maximum percentage of time allowed for serving LES requests
+	LightPeers int    // Maximum number of LES client peers
+	MaxPeers   int    // Maximum number of global peers
 
-	BlockChainVersion  int
 	SkipBcVersionCheck bool // e.g. blockchain export
 	DatabaseCache      int
 	DatabaseHandles    int
 
-	NatSpec   bool
 	DocRoot   string
 	AutoDAG   bool
+	PowFake   bool
 	PowTest   bool
 	PowShared bool
 	ExtraData []byte
 
-	AccountManager *accounts.Manager
-	Elementbase      common.Address
-	GasPrice       *big.Int
-	MinerThreads   int
-	SolcPath       string
+	Elementbase    common.Address
+	GasPrice     *big.Int
+	MinerThreads int
+	SolcPath     string
 
 	GpoMinGasPrice          *big.Int
 	GpoMaxGasPrice          *big.Int
@@ -96,65 +97,86 @@ type Config struct {
 	GpobaseStepUp           int
 	GpobaseCorrectionFactor int
 
-	EnableJit bool
-	ForceJit  bool
+	EnablePreimageRecording bool
 
 	TestGenesisBlock *types.Block   // Genesis block to seed the chain database with (testing only!)
 	TestGenesisState eledb.Database // Genesis state to seed the database with (testing only!)
 }
 
+type LesServer interface {
+	Start(srvr *p2p.Server)
+	Stop()
+	Protocols() []p2p.Protocol
+}
+
+// Elementrem implements the Elementrem full node service.
 type Elementrem struct {
-	chainConfig *core.ChainConfig
-	// Channel for shutting down the elementrem
-	shutdownChan chan bool
-
-	// DB interfaces
-	chainDb eledb.Database // Block chain database
-	dappDb  eledb.Database // Dapp database
-
+	chainConfig *params.ChainConfig
+	// Channel for shutting down the service
+	shutdownChan  chan bool // Channel for shutting down the elementrem
+	stopDbUpgrade func()    // stop chain db sequential key upgrade
 	// Handlers
 	txPool          *core.TxPool
 	txMu            sync.Mutex
 	blockchain      *core.BlockChain
-	accountManager  *accounts.Manager
-	pow             *elhash.Elhash
 	protocolManager *ProtocolManager
-	SolcPath        string
-	solc            *compiler.Solidity
-	gpo             *GasPriceOracle
+	lesServer       LesServer
+	// DB interfaces
+	chainDb eledb.Database // Block chain database
 
-	GpoMinGasPrice          *big.Int
-	GpoMaxGasPrice          *big.Int
-	GpoFullBlockRatio       int
-	GpobaseStepDown         int
-	GpobaseStepUp           int
-	GpobaseCorrectionFactor int
+	eventMux       *event.TypeMux
+	pow            pow.PoW
+	accountManager *accounts.Manager
 
-	httpclient *httpclient.HTTPClient
+	ApiBackend *EleApiBackend
 
-	eventMux *event.TypeMux
-	miner    *miner.Miner
+	miner        *miner.Miner
+	Mining       bool
+	MinerThreads int
+	AutoDAG      bool
+	autodagquit  chan bool
+	elementbase    common.Address
+	solcPath     string
 
-	Mining        bool
-	MinerThreads  int
-	NatSpec       bool
-	AutoDAG       bool
-	PowTest       bool
-	autodagquit   chan bool
-	elementbase     common.Address
 	netVersionId  int
-	netRPCService *PublicNetAPI
+	netRPCService *eleapi.PublicNetAPI
 }
 
+func (s *Elementrem) AddLesServer(ls LesServer) {
+	s.lesServer = ls
+	s.protocolManager.lesServer = ls
+}
+
+// New creates a new Elementrem object (including the
+// initialisation of the common Elementrem object)
 func New(ctx *node.ServiceContext, config *Config) (*Elementrem, error) {
-	// Open the chain database and perform any upgrades needed
-	chainDb, err := ctx.OpenDatabase("chaindata", config.DatabaseCache, config.DatabaseHandles)
+	chainDb, err := CreateDB(ctx, config, "chaindata")
 	if err != nil {
 		return nil, err
 	}
-	if db, ok := chainDb.(*eledb.LDBDatabase); ok {
-		db.Meter("ele/db/chaindata/")
+	stopDbUpgrade := upgradeSequentialKeys(chainDb)
+	if err := SetupGenesisBlock(&chainDb, config); err != nil {
+		return nil, err
 	}
+	pow, err := CreatePoW(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ele := &Elementrem{
+		chainDb:        chainDb,
+		eventMux:       ctx.EventMux,
+		accountManager: ctx.AccountManager,
+		pow:            pow,
+		shutdownChan:   make(chan bool),
+		stopDbUpgrade:  stopDbUpgrade,
+		netVersionId:   config.NetworkId,
+		elementbase:      config.Elementbase,
+		MinerThreads:   config.MinerThreads,
+		AutoDAG:        config.AutoDAG,
+		solcPath:       config.SolcPath,
+	}
+
 	if err := upgradeChainDatabase(chainDb); err != nil {
 		return nil, err
 	}
@@ -162,83 +184,19 @@ func New(ctx *node.ServiceContext, config *Config) (*Elementrem, error) {
 		return nil, err
 	}
 
-	dappDb, err := ctx.OpenDatabase("dapp", config.DatabaseCache, config.DatabaseHandles)
-	if err != nil {
-		return nil, err
-	}
-	if db, ok := dappDb.(*eledb.LDBDatabase); ok {
-		db.Meter("ele/db/dapp/")
-	}
 	glog.V(logger.Info).Infof("Protocol Versions: %v, Network Id: %v", ProtocolVersions, config.NetworkId)
-
-	// Load up any custom genesis block if requested
-	if len(config.Genesis) > 0 {
-		block, err := core.WriteGenesisBlock(chainDb, strings.NewReader(config.Genesis))
-		if err != nil {
-			return nil, err
-		}
-		glog.V(logger.Info).Infof("Successfully wrote custom genesis block: %x", block.Hash())
-	}
-
-	// Load up a test setup if directly injected
-	if config.TestGenesisState != nil {
-		chainDb = config.TestGenesisState
-	}
-	if config.TestGenesisBlock != nil {
-		core.WriteTd(chainDb, config.TestGenesisBlock.Hash(), config.TestGenesisBlock.Difficulty())
-		core.WriteBlock(chainDb, config.TestGenesisBlock)
-		core.WriteCanonicalHash(chainDb, config.TestGenesisBlock.Hash(), config.TestGenesisBlock.NumberU64())
-		core.WriteHeadBlockHash(chainDb, config.TestGenesisBlock.Hash())
-	}
 
 	if !config.SkipBcVersionCheck {
 		bcVersion := core.GetBlockChainVersion(chainDb)
-		if bcVersion != config.BlockChainVersion && bcVersion != 0 {
-			return nil, fmt.Errorf("Blockchain DB version mismatch (%d / %d). Run gele upgradedb.\n", bcVersion, config.BlockChainVersion)
+		if bcVersion != core.BlockChainVersion && bcVersion != 0 {
+			return nil, fmt.Errorf("Blockchain DB version mismatch (%d / %d). Run gele upgradedb.\n", bcVersion, core.BlockChainVersion)
 		}
-		core.WriteBlockChainVersion(chainDb, config.BlockChainVersion)
-	}
-	glog.V(logger.Info).Infof("Blockchain DB Version: %d", config.BlockChainVersion)
-
-	ele := &Elementrem{
-		shutdownChan:            make(chan bool),
-		chainDb:                 chainDb,
-		dappDb:                  dappDb,
-		eventMux:                ctx.EventMux,
-		accountManager:          config.AccountManager,
-		elementbase:               config.Elementbase,
-		netVersionId:            config.NetworkId,
-		NatSpec:                 config.NatSpec,
-		MinerThreads:            config.MinerThreads,
-		SolcPath:                config.SolcPath,
-		AutoDAG:                 config.AutoDAG,
-		PowTest:                 config.PowTest,
-		GpoMinGasPrice:          config.GpoMinGasPrice,
-		GpoMaxGasPrice:          config.GpoMaxGasPrice,
-		GpoFullBlockRatio:       config.GpoFullBlockRatio,
-		GpobaseStepDown:         config.GpobaseStepDown,
-		GpobaseStepUp:           config.GpobaseStepUp,
-		GpobaseCorrectionFactor: config.GpobaseCorrectionFactor,
-		httpclient:              httpclient.New(config.DocRoot),
-	}
-	switch {
-	case config.PowTest:
-		glog.V(logger.Info).Infof("elhash used in test mode")
-		ele.pow, err = elhash.NewForTesting()
-		if err != nil {
-			return nil, err
-		}
-	case config.PowShared:
-		glog.V(logger.Info).Infof("elhash used in shared mode")
-		ele.pow = elhash.NewShared()
-
-	default:
-		ele.pow = elhash.New()
+		core.WriteBlockChainVersion(chainDb, core.BlockChainVersion)
 	}
 
 	// load the genesis block or write a new one if no genesis
 	// block is prenent in the database.
-	genesis := core.GetBlock(chainDb, core.GetCanonicalHash(chainDb, 0))
+	genesis := core.GetBlock(chainDb, core.GetCanonicalHash(chainDb, 0), 0)
 	if genesis == nil {
 		genesis, err = core.WriteDefaultGenesisBlock(chainDb)
 		if err != nil {
@@ -253,61 +211,108 @@ func New(ctx *node.ServiceContext, config *Config) (*Elementrem, error) {
 	core.WriteChainConfig(chainDb, genesis.Hash(), config.ChainConfig)
 
 	ele.chainConfig = config.ChainConfig
-	ele.chainConfig.VmConfig = vm.Config{
-		EnableJit: config.EnableJit,
-		ForceJit:  config.ForceJit,
-	}
 
-	ele.blockchain, err = core.NewBlockChain(chainDb, ele.chainConfig, ele.pow, ele.EventMux())
+	glog.V(logger.Info).Infoln("Chain config:", ele.chainConfig)
+
+	ele.blockchain, err = core.NewBlockChain(chainDb, ele.chainConfig, ele.pow, ele.EventMux(), vm.Config{EnablePreimageRecording: config.EnablePreimageRecording})
 	if err != nil {
 		if err == core.ErrNoGenesis {
 			return nil, fmt.Errorf(`No chain found. Please initialise a new chain using the "init" subcommand.`)
 		}
 		return nil, err
 	}
-	ele.gpo = NewGasPriceOracle(ele)
-
 	newPool := core.NewTxPool(ele.chainConfig, ele.EventMux(), ele.blockchain.State, ele.blockchain.GasLimit)
 	ele.txPool = newPool
 
-	if ele.protocolManager, err = NewProtocolManager(ele.chainConfig, config.FastSync, config.NetworkId, ele.eventMux, ele.txPool, ele.pow, ele.blockchain, chainDb); err != nil {
+	maxPeers := config.MaxPeers
+	if config.LightServ > 0 {
+		// if we are running a light server, limit the number of ELE peers so that we reserve some space for incoming LES connections
+		// temporary solution until the new peer connectivity API is finished
+		halfPeers := maxPeers / 2
+		maxPeers -= config.LightPeers
+		if maxPeers < halfPeers {
+			maxPeers = halfPeers
+		}
+	}
+
+	if ele.protocolManager, err = NewProtocolManager(ele.chainConfig, config.FastSync, config.NetworkId, maxPeers, ele.eventMux, ele.txPool, ele.pow, ele.blockchain, chainDb); err != nil {
 		return nil, err
 	}
 	ele.miner = miner.New(ele, ele.chainConfig, ele.EventMux(), ele.pow)
 	ele.miner.SetGasPrice(config.GasPrice)
 	ele.miner.SetExtra(config.ExtraData)
 
+	gpoParams := &gasprice.GpoParams{
+		GpoMinGasPrice:          config.GpoMinGasPrice,
+		GpoMaxGasPrice:          config.GpoMaxGasPrice,
+		GpoFullBlockRatio:       config.GpoFullBlockRatio,
+		GpobaseStepDown:         config.GpobaseStepDown,
+		GpobaseStepUp:           config.GpobaseStepUp,
+		GpobaseCorrectionFactor: config.GpobaseCorrectionFactor,
+	}
+	gpo := gasprice.NewGasPriceOracle(ele.blockchain, chainDb, ele.eventMux, gpoParams)
+	ele.ApiBackend = &EleApiBackend{ele, gpo}
+
 	return ele, nil
+}
+
+// CreateDB creates the chain database.
+func CreateDB(ctx *node.ServiceContext, config *Config, name string) (eledb.Database, error) {
+	db, err := ctx.OpenDatabase(name, config.DatabaseCache, config.DatabaseHandles)
+	if db, ok := db.(*eledb.LDBDatabase); ok {
+		db.Meter("ele/db/chaindata/")
+	}
+	return db, err
+}
+
+// SetupGenesisBlock initializes the genesis block for an Elementrem service
+func SetupGenesisBlock(chainDb *eledb.Database, config *Config) error {
+	// Load up any custom genesis block if requested
+	if len(config.Genesis) > 0 {
+		block, err := core.WriteGenesisBlock(*chainDb, strings.NewReader(config.Genesis))
+		if err != nil {
+			return err
+		}
+		glog.V(logger.Info).Infof("Successfully wrote custom genesis block: %x", block.Hash())
+	}
+	// Load up a test setup if directly injected
+	if config.TestGenesisState != nil {
+		*chainDb = config.TestGenesisState
+	}
+	if config.TestGenesisBlock != nil {
+		core.WriteTd(*chainDb, config.TestGenesisBlock.Hash(), config.TestGenesisBlock.NumberU64(), config.TestGenesisBlock.Difficulty())
+		core.WriteBlock(*chainDb, config.TestGenesisBlock)
+		core.WriteCanonicalHash(*chainDb, config.TestGenesisBlock.Hash(), config.TestGenesisBlock.NumberU64())
+		core.WriteHeadBlockHash(*chainDb, config.TestGenesisBlock.Hash())
+	}
+	return nil
+}
+
+// CreatePoW creates the required type of PoW instance for an Elementrem service
+func CreatePoW(config *Config) (pow.PoW, error) {
+	switch {
+	case config.PowFake:
+		glog.V(logger.Info).Infof("elhash used in fake mode")
+		return pow.PoW(core.FakePow{}), nil
+	case config.PowTest:
+		glog.V(logger.Info).Infof("elhash used in test mode")
+		return elhash.NewForTesting()
+	case config.PowShared:
+		glog.V(logger.Info).Infof("elhash used in shared mode")
+		return elhash.NewShared(), nil
+	default:
+		return elhash.New(), nil
+	}
 }
 
 // APIs returns the collection of RPC services the elementrem package offers.
 // NOTE, some of these services probably need to be moved to somewhere else.
 func (s *Elementrem) APIs() []rpc.API {
-	return []rpc.API{
+	return append(eleapi.GetAPIs(s.ApiBackend, s.solcPath), []rpc.API{
 		{
 			Namespace: "ele",
 			Version:   "1.0",
 			Service:   NewPublicElementremAPI(s),
-			Public:    true,
-		}, {
-			Namespace: "ele",
-			Version:   "1.0",
-			Service:   NewPublicAccountAPI(s.accountManager),
-			Public:    true,
-		}, {
-			Namespace: "personal",
-			Version:   "1.0",
-			Service:   NewPrivateAccountAPI(s),
-			Public:    false,
-		}, {
-			Namespace: "ele",
-			Version:   "1.0",
-			Service:   NewPublicBlockChainAPI(s.chainConfig, s.blockchain, s.miner, s.chainDb, s.gpo, s.eventMux, s.accountManager),
-			Public:    true,
-		}, {
-			Namespace: "ele",
-			Version:   "1.0",
-			Service:   NewPublicTransactionPoolAPI(s),
 			Public:    true,
 		}, {
 			Namespace: "ele",
@@ -325,14 +330,9 @@ func (s *Elementrem) APIs() []rpc.API {
 			Service:   NewPrivateMinerAPI(s),
 			Public:    false,
 		}, {
-			Namespace: "txpool",
-			Version:   "1.0",
-			Service:   NewPublicTxPoolAPI(s),
-			Public:    true,
-		}, {
 			Namespace: "ele",
 			Version:   "1.0",
-			Service:   filters.NewPublicFilterAPI(s.chainDb, s.eventMux),
+			Service:   filters.NewPublicFilterAPI(s.ApiBackend, false),
 			Public:    true,
 		}, {
 			Namespace: "admin",
@@ -352,12 +352,8 @@ func (s *Elementrem) APIs() []rpc.API {
 			Version:   "1.0",
 			Service:   s.netRPCService,
 			Public:    true,
-		}, {
-			Namespace: "admin",
-			Version:   "1.0",
-			Service:   elereg.NewPrivateRegistarAPI(s.chainConfig, s.blockchain, s.chainDb, s.txPool, s.accountManager),
 		},
-	}
+	}...)
 }
 
 func (s *Elementrem) ResetWithGenesisBlock(gb *types.Block) {
@@ -365,21 +361,32 @@ func (s *Elementrem) ResetWithGenesisBlock(gb *types.Block) {
 }
 
 func (s *Elementrem) Elementbase() (eb common.Address, err error) {
-	eb = s.elementbase
-	if (eb == common.Address{}) {
-		firstAccount, err := s.AccountManager().AccountByIndex(0)
-		eb = firstAccount.Address
-		if err != nil {
-			return eb, fmt.Errorf("elementbase address must be explicitly specified")
+	if s.elementbase != (common.Address{}) {
+		return s.elementbase, nil
+	}
+	if wallets := s.AccountManager().Wallets(); len(wallets) > 0 {
+		if accounts := wallets[0].Accounts(); len(accounts) > 0 {
+			return accounts[0].Address, nil
 		}
 	}
-	return eb, nil
+	return common.Address{}, fmt.Errorf("elementbase address must be explicitly specified")
 }
 
 // set in js console via admin interface or wrapper from cli flags
 func (self *Elementrem) SetElementbase(elementbase common.Address) {
 	self.elementbase = elementbase
 	self.miner.SetElementbase(elementbase)
+}
+
+func (s *Elementrem) StartMining(threads int) error {
+	eb, err := s.Elementbase()
+	if err != nil {
+		err = fmt.Errorf("Cannot start mining without elementbase address: %v", err)
+		glog.V(logger.Error).Infoln(err)
+		return err
+	}
+	go s.miner.Start(eb, threads)
+	return nil
 }
 
 func (s *Elementrem) StopMining()         { s.miner.Stop() }
@@ -390,8 +397,8 @@ func (s *Elementrem) AccountManager() *accounts.Manager  { return s.accountManag
 func (s *Elementrem) BlockChain() *core.BlockChain       { return s.blockchain }
 func (s *Elementrem) TxPool() *core.TxPool               { return s.txPool }
 func (s *Elementrem) EventMux() *event.TypeMux           { return s.eventMux }
+func (s *Elementrem) Pow() pow.PoW                       { return s.pow }
 func (s *Elementrem) ChainDb() eledb.Database            { return s.chainDb }
-func (s *Elementrem) DappDb() eledb.Database             { return s.dappDb }
 func (s *Elementrem) IsListening() bool                  { return true } // Always listening
 func (s *Elementrem) EleVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *Elementrem) NetVersion() int                    { return s.netVersionId }
@@ -400,25 +407,38 @@ func (s *Elementrem) Downloader() *downloader.Downloader { return s.protocolMana
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.
 func (s *Elementrem) Protocols() []p2p.Protocol {
-	return s.protocolManager.SubProtocols
+	if s.lesServer == nil {
+		return s.protocolManager.SubProtocols
+	} else {
+		return append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
+	}
 }
 
 // Start implements node.Service, starting all internal goroutines needed by the
 // Elementrem protocol implementation.
 func (s *Elementrem) Start(srvr *p2p.Server) error {
+	s.netRPCService = eleapi.NewPublicNetAPI(srvr, s.NetVersion())
 	if s.AutoDAG {
 		s.StartAutoDAG()
 	}
 	s.protocolManager.Start()
-	s.netRPCService = NewPublicNetAPI(srvr, s.NetVersion())
+	if s.lesServer != nil {
+		s.lesServer.Start(srvr)
+	}
 	return nil
 }
 
 // Stop implements node.Service, terminating all internal goroutines used by the
 // Elementrem protocol.
 func (s *Elementrem) Stop() error {
+	if s.stopDbUpgrade != nil {
+		s.stopDbUpgrade()
+	}
 	s.blockchain.Stop()
 	s.protocolManager.Stop()
+	if s.lesServer != nil {
+		s.lesServer.Stop()
+	}
 	s.txPool.Stop()
 	s.miner.Stop()
 	s.eventMux.Stop()
@@ -426,7 +446,6 @@ func (s *Elementrem) Stop() error {
 	s.StopAutoDAG()
 
 	s.chainDb.Close()
-	s.dappDb.Close()
 	close(s.shutdownChan)
 
 	return nil
@@ -500,132 +519,10 @@ func (self *Elementrem) StopAutoDAG() {
 	glog.V(logger.Info).Infof("Automatic pregeneration of elhash DAG OFF (elhash dir: %s)", elhash.DefaultDir)
 }
 
-// HTTPClient returns the light http client used for fetching offchain docs
-// (natspec, source for verification)
-func (self *Elementrem) HTTPClient() *httpclient.HTTPClient {
-	return self.httpclient
-}
-
-func (self *Elementrem) Solc() (*compiler.Solidity, error) {
-	var err error
-	if self.solc == nil {
-		self.solc, err = compiler.New(self.SolcPath)
-	}
-	return self.solc, err
-}
-
-// set in js console via admin interface or wrapper from cli flags
-func (self *Elementrem) SetSolc(solcPath string) (*compiler.Solidity, error) {
-	self.SolcPath = solcPath
-	self.solc = nil
-	return self.Solc()
-}
-
 // dagFiles(epoch) returns the two alternative DAG filenames (not a path)
 // 1) <revision>-<hex(seedhash[8])> 2) full-R<revision>-<hex(seedhash[8])>
 func dagFiles(epoch uint64) (string, string) {
 	seedHash, _ := elhash.GetSeedHash(epoch * epochLength)
 	dag := fmt.Sprintf("full-R%d-%x", elhashRevision, seedHash[:8])
 	return dag, "full-R" + dag
-}
-
-// upgradeChainDatabase ensures that the chain database stores block split into
-// separate header and body entries.
-func upgradeChainDatabase(db eledb.Database) error {
-	// Short circuit if the head block is stored already as separate header and body
-	data, err := db.Get([]byte("LastBlock"))
-	if err != nil {
-		return nil
-	}
-	head := common.BytesToHash(data)
-
-	if block := core.GetBlockByHashOld(db, head); block == nil {
-		return nil
-	}
-	// At least some of the database is still the old format, upgrade (skip the head block!)
-	glog.V(logger.Info).Info("Old database detected, upgrading...")
-
-	if db, ok := db.(*eledb.LDBDatabase); ok {
-		blockPrefix := []byte("block-hash-")
-		for it := db.NewIterator(); it.Next(); {
-			// Skip anything other than a combined block
-			if !bytes.HasPrefix(it.Key(), blockPrefix) {
-				continue
-			}
-			// Skip the head block (merge last to signal upgrade completion)
-			if bytes.HasSuffix(it.Key(), head.Bytes()) {
-				continue
-			}
-			// Load the block, split and serialize (order!)
-			block := core.GetBlockByHashOld(db, common.BytesToHash(bytes.TrimPrefix(it.Key(), blockPrefix)))
-
-			if err := core.WriteTd(db, block.Hash(), block.DeprecatedTd()); err != nil {
-				return err
-			}
-			if err := core.WriteBody(db, block.Hash(), block.Body()); err != nil {
-				return err
-			}
-			if err := core.WriteHeader(db, block.Header()); err != nil {
-				return err
-			}
-			if err := db.Delete(it.Key()); err != nil {
-				return err
-			}
-		}
-		// Lastly, upgrade the head block, disabling the upgrade mechanism
-		current := core.GetBlockByHashOld(db, head)
-
-		if err := core.WriteTd(db, current.Hash(), current.DeprecatedTd()); err != nil {
-			return err
-		}
-		if err := core.WriteBody(db, current.Hash(), current.Body()); err != nil {
-			return err
-		}
-		if err := core.WriteHeader(db, current.Header()); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func addMipmapBloomBins(db eledb.Database) (err error) {
-	const mipmapVersion uint = 2
-
-	// check if the version is set. We ignore data for now since there's
-	// only one version so we can easily ignore it for now
-	var data []byte
-	data, _ = db.Get([]byte("setting-mipmap-version"))
-	if len(data) > 0 {
-		var version uint
-		if err := rlp.DecodeBytes(data, &version); err == nil && version == mipmapVersion {
-			return nil
-		}
-	}
-
-	defer func() {
-		if err == nil {
-			var val []byte
-			val, err = rlp.EncodeToBytes(mipmapVersion)
-			if err == nil {
-				err = db.Put([]byte("setting-mipmap-version"), val)
-			}
-			return
-		}
-	}()
-	latestBlock := core.GetBlock(db, core.GetHeadBlockHash(db))
-	if latestBlock == nil { // clean database
-		return
-	}
-
-	tstart := time.Now()
-	glog.V(logger.Info).Infoln("upgrading db log bloom bins")
-	for i := uint64(0); i <= latestBlock.NumberU64(); i++ {
-		hash := core.GetCanonicalHash(db, i)
-		if (hash == common.Hash{}) {
-			return fmt.Errorf("chain db corrupted. Could not find block %d.", i)
-		}
-		core.WriteMipmapBloom(db, i, core.GetBlockReceipts(db, hash))
-	}
-	glog.V(logger.Info).Infoln("upgrade completed in", time.Since(tstart))
-	return nil
 }

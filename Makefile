@@ -2,12 +2,11 @@
 # with Go source code. If you know what GOPATH is then you probably
 # don't need to bother with make.
 
-.PHONY: gele gele-cross evm all test clean
+.PHONY: gele android ios gele-cross evm all test clean
 .PHONY: gele-linux gele-linux-386 gele-linux-amd64 gele-linux-mips64 gele-linux-mips64le
 .PHONY: gele-linux-arm gele-linux-arm-5 gele-linux-arm-6 gele-linux-arm-7 gele-linux-arm64
 .PHONY: gele-darwin gele-darwin-386 gele-darwin-amd64
 .PHONY: gele-windows gele-windows-386 gele-windows-amd64
-.PHONY: gele-android gele-ios
 
 GOBIN = build/bin
 GO ?= latest
@@ -20,16 +19,26 @@ gele:
 evm:
 	build/env.sh go run build/ci.go install ./cmd/evm
 	@echo "Done building."
-	@echo "Run \"$(GOBIN)/evm to start the evm."
+	@echo "Run \"$(GOBIN)/evm\" to start the evm."
 
 all:
 	build/env.sh go run build/ci.go install
+
+android:
+	build/env.sh go run build/ci.go aar --local
+	@echo "Done building."
+	@echo "Import \"$(GOBIN)/gele.aar\" to use the library."
+
+ios:
+	build/env.sh go run build/ci.go xcode --local
+	@echo "Done building."
+	@echo "Import \"$(GOBIN)/Gele.framework\" to use the library."
 
 test: all
 	build/env.sh go run build/ci.go test
 
 clean:
-	rm -fr build/_workspace/pkg/ Godeps/_workspace/pkg $(GOBIN)/*
+	rm -fr build/_workspace/pkg/ $(GOBIN)/*
 
 # Cross Compilation Targets (xgo)
 
@@ -74,7 +83,7 @@ gele-linux-arm64:
 	build/env.sh go run build/ci.go xgo -- --go=$(GO) --dest=$(GOBIN) --targets=linux/arm64 -v ./cmd/gele
 	@echo "Linux ARM64 cross compilation done:"
 	@ls -ld $(GOBIN)/gele-linux-* | grep arm64
-	
+
 gele-linux-mips64:
 	build/env.sh go run build/ci.go xgo -- --go=$(GO) --dest=$(GOBIN) --targets=linux/mips64 -v ./cmd/gele
 	@echo "Linux MIPS64 cross compilation done:"
@@ -112,13 +121,3 @@ gele-windows-amd64:
 	build/env.sh go run build/ci.go xgo -- --go=$(GO) --dest=$(GOBIN) --targets=windows/amd64 -v ./cmd/gele
 	@echo "Windows amd64 cross compilation done:"
 	@ls -ld $(GOBIN)/gele-windows-* | grep amd64
-
-gele-android:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --dest=$(GOBIN) --targets=android-21/aar -v ./cmd/gele
-	@echo "Android cross compilation done:"
-	@ls -ld $(GOBIN)/gele-android-*
-
-gele-ios:
-	build/env.sh go run build/ci.go xgo -- --go=$(GO) --dest=$(GOBIN) --targets=ios-7.0/framework -v ./cmd/gele
-	@echo "iOS framework cross compilation done:"
-	@ls -ld $(GOBIN)/gele-ios-*

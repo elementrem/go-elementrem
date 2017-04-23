@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -123,7 +123,7 @@ func (it *NodeIterator) step() error {
 	if !it.dataIt.Next() {
 		it.dataIt = nil
 	}
-	if bytes.Compare(account.CodeHash, emptyCodeHash) != 0 {
+	if !bytes.Equal(account.CodeHash, emptyCodeHash) {
 		it.codeHash = common.BytesToHash(account.CodeHash)
 		it.code, err = it.state.db.Get(account.CodeHash)
 		if err != nil {

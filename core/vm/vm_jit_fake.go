@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -17,10 +17,3 @@
 // +build !evmjit
 
 package vm
-
-import "fmt"
-
-func NewJitVm(env Environment) VirtualMachine {
-	fmt.Printf("Warning! EVM JIT not enabled.\n")
-	return New(env, Config{})
-}

@@ -1,4 +1,4 @@
-// Copyright 2016 The go-elementrem Authors.
+// Copyright 2016-2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -82,7 +82,7 @@ func discoverPMP() Interface {
 	// any responses after a very short timeout.
 	timeout := time.NewTimer(1 * time.Second)
 	defer timeout.Stop()
-	for _ = range gws {
+	for range gws {
 		select {
 		case c := <-found:
 			if c != nil {
