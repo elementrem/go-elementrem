@@ -30,10 +30,10 @@ var (
 	MainNetHomesteadBlock = big.NewInt(0) // Mainnet homestead block
 
 	TestNetHomesteadGasRepriceBlock = big.NewInt(0)       // Testnet gas reprice block
-	MainNetHomesteadGasRepriceBlock = big.NewInt(1747015) // Mainnet gas reprice block
+	MainNetHomesteadGasRepriceBlock = big.NewInt(1881500) // Mainnet gas reprice block
 
 	TestNetHomesteadGasRepriceHash = common.HexToHash("") // Testnet gas reprice block hash (used by fast sync)
-	MainNetHomesteadGasRepriceHash = common.HexToHash("0xa7252cf7a335b710795ff924e764aeeb01d37fc00aeaea6141d89a9ac384a54a") // Mainnet gas reprice block hash (used by fast sync)
+	MainNetHomesteadGasRepriceHash = common.HexToHash("") // Mainnet gas reprice block hash (used by fast sync)
 
 	TestNetSpuriousDragon = big.NewInt(0)
 	MainNetSpuriousDragon = big.NewInt(1882000)
