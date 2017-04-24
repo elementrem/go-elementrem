@@ -33,6 +33,7 @@ var MainnetChainConfig = &ChainConfig{
 	EIP150Hash:     MainNetHomesteadGasRepriceHash,
 	EIP155Block:    MainNetSpuriousDragon,
 	EIP158Block:    MainNetSpuriousDragon,
+	TronBlock:	MainNetTronRecursive,
 }
 
 // TestnetChainConfig is the chain parameters to run a node on the test network.
@@ -65,11 +66,12 @@ type ChainConfig struct {
 
 	EIP155Block *big.Int `json:"eip155Block"` // EIP155 HF block
 	EIP158Block *big.Int `json:"eip158Block"` // EIP158 HF block
+	TronBlock *big.Int `json:"tronblock"` // POW 2.0
 }
 
 // String implements the Stringer interface.
 func (c *ChainConfig) String() string {
-	return fmt.Sprintf("{ChainID: %v Homestead: %v EIP150: %v EIP155: %v EIP158: %v}",
+	return fmt.Sprintf("{ChainID: %v Homestead: %v EIP150: %v EIP155: %v EIP158: %v Tron: %v}", 
 		c.ChainId,
 		c.HomesteadBlock,
 //		c.INTERSTELLARleapBlock,
@@ -77,11 +79,12 @@ func (c *ChainConfig) String() string {
 		c.EIP150Block,
 		c.EIP155Block,
 		c.EIP158Block,
+		c.TronBlock,
 	)
 }
 
 var (
-	TestChainConfig = &ChainConfig{big.NewInt(1), new(big.Int), new(big.Int), true, new(big.Int), common.Hash{}, new(big.Int), new(big.Int)}
+	 TestChainConfig = &ChainConfig{big.NewInt(1), new(big.Int), new(big.Int), true, new(big.Int), common.Hash{}, new(big.Int), new(big.Int), new(big.Int)}
 	TestRules       = TestChainConfig.Rules(new(big.Int))
 )
 
