@@ -132,6 +132,12 @@ func ApplyTransaction(config *params.ChainConfig, bc *BlockChain, gp *GasPool, s
 // and rewards for included uncles. The coinbase of each uncle block is
 // also rewarded.
 func AccumulateRewards(statedb *state.StateDB, header *types.Header, uncles []*types.Header) {
+	var nx = header.Number 
+	if nx.Cmp(params.MainNetTronRecursive) <= 0 { 
+		BlockReward=big.NewInt(5e+18) 
+			} else { 
+		BlockReward=big.NewInt(1e+18) 
+	} 
 	reward := new(big.Int).Set(BlockReward)
 	r := new(big.Int)
 	for _, uncle := range uncles {

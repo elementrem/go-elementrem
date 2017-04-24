@@ -877,6 +877,10 @@ func MakeChainConfigFromDb(ctx *cli.Context, db eledb.Database) *params.ChainCon
 			config.EIP155Block = params.MainNetSpuriousDragon
 			config.EIP158Block = params.MainNetSpuriousDragon
 			config.ChainId = params.MainNetChainID
+
+			// POW 2.0 fork 
+			config.TronBlock = params.MainNetTronRecursive 
+
 		}
 	}
 	return config
