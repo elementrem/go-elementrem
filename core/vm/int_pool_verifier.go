@@ -1,4 +1,4 @@
-// Copyright 2016-2017 The go-elementrem Authors
+// Copyright 2017 The go-elementrem Authors
 // This file is part of the go-elementrem library.
 //
 // The go-elementrem library is free software: you can redistribute it and/or modify
@@ -14,9 +14,18 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-elementrem library. If not, see <http://www.gnu.org/licenses/>.
 
+// +build VERIFY_EVM_INTEGER_POOL
+
 package vm
 
-// VirtualMachine is an EVM interface
-type VirtualMachine interface {
-	Run(*Contract, []byte) ([]byte, error)
+import "fmt"
+
+const verifyPool = true
+
+func verifyIntegerPool(ip *intPool) {
+	for i, item := range ip.pool.data {
+		if item.Cmp(checkVal) != 0 {
+			panic(fmt.Sprintf("%d'th item failed aggressive pool check. Value was modified", i))
+		}
+	}
 }

@@ -14,31 +14,36 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-elementrem library. If not, see <http://www.gnu.org/licenses/>.
 
-package runtime
+package vm
 
-import (
-	"math/big"
+import "math/big"
 
-	"github.com/elementrem/go-elementrem/common"
-	"github.com/elementrem/go-elementrem/core"
-	"github.com/elementrem/go-elementrem/core/state"
-	"github.com/elementrem/go-elementrem/core/vm"
-)
+var checkVal = big.NewInt(-42)
 
-func NewEnv(cfg *Config, state *state.StateDB) *vm.EVM {
-	context := vm.Context{
-		CanTransfer: core.CanTransfer,
-		Transfer:    core.Transfer,
-		GetHash:     func(uint64) common.Hash { return common.Hash{} },
+// intPool is a pool of big integers that
+// can be reused for all big.Int operations.
+type intPool struct {
+	pool *Stack
+}
 
-		Origin:      cfg.Origin,
-		Coinbase:    cfg.Coinbase,
-		BlockNumber: cfg.BlockNumber,
-		Time:        cfg.Time,
-		Difficulty:  cfg.Difficulty,
-		GasLimit:    new(big.Int).SetUint64(cfg.GasLimit),
-		GasPrice:    new(big.Int),
+func newIntPool() *intPool {
+	return &intPool{pool: newstack()}
+}
+
+func (p *intPool) get() *big.Int {
+	if p.pool.len() > 0 {
+		return p.pool.pop()
 	}
+	return new(big.Int)
+}
+func (p *intPool) put(is ...*big.Int) {
+	for _, i := range is {
+		// verifyPool is a build flag. Pool verification makes sure the integrity
+		// of the integer pool by comparing values to a default value.
+		if verifyPool {
+			i.Set(checkVal)
+		}
 
-	return vm.NewEVM(context, cfg.State, cfg.ChainConfig, cfg.EVMConfig)
+		p.pool.push(i)
+	}
 }
