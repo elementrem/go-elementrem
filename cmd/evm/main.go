@@ -29,7 +29,6 @@ import (
 	"github.com/elementrem/go-elementrem/core/state"
 	"github.com/elementrem/go-elementrem/core/vm"
 	"github.com/elementrem/go-elementrem/core/vm/runtime"
-	"github.com/elementrem/go-elementrem/crypto"
 	"github.com/elementrem/go-elementrem/eledb"
 	"github.com/elementrem/go-elementrem/logger/glog"
 	"gopkg.in/urfave/cli.v1"
@@ -115,9 +114,13 @@ func run(ctx *cli.Context) error {
 	glog.SetToStderr(true)
 	glog.SetV(ctx.GlobalInt(VerbosityFlag.Name))
 
-	db, _ := eledb.NewMemDatabase()
-	statedb, _ := state.New(common.Hash{}, db)
-	sender := statedb.CreateAccount(common.StringToAddress("sender"))
+	var (
+		db, _      = eledb.NewMemDatabase()
+		statedb, _ = state.New(common.Hash{}, db)
+		address    = common.StringToAddress("sender")
+		sender     = vm.AccountRef(address)
+	)
+	statedb.CreateAccount(common.StringToAddress("sender"))
 
 	logger := vm.NewStructLogger(nil)
 
@@ -166,10 +169,11 @@ func run(ctx *cli.Context) error {
 			},
 		})
 	} else {
-		receiver := statedb.CreateAccount(common.StringToAddress("receiver"))
-		receiver.SetCode(crypto.Keccak256Hash(code), code)
+		receiverAddress := common.StringToAddress("receiver")
+		statedb.CreateAccount(receiverAddress)
+		statedb.SetCode(receiverAddress, code)
 
-		ret, err = runtime.Call(receiver.Address(), common.Hex2Bytes(ctx.GlobalString(InputFlag.Name)), &runtime.Config{
+		ret, err = runtime.Call(receiverAddress, common.Hex2Bytes(ctx.GlobalString(InputFlag.Name)), &runtime.Config{
 			Origin:   sender.Address(),
 			State:    statedb,
 			GasLimit: common.Big(ctx.GlobalString(GasFlag.Name)).Uint64(),

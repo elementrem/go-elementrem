@@ -62,13 +62,13 @@ func ValidateINTERSTELLARHeaderExtraData(config *params.ChainConfig, header *typ
 // contract.
 func ApplyINTERSTELLARHyperzLeap(statedb *state.StateDB) {
 	// Retrieve the contract to refund balances into
-	refund := statedb.GetOrNewStateObject(params.INTERSTELLARRefundContract)
+	if !statedb.Exist(params.INTERSTELLARRefundContract) {
+		statedb.CreateAccount(params.INTERSTELLARRefundContract)
+	}
 
 	// Move every INTERSTELLAR account and extra-balance account funds into the refund contract
 	for _, addr := range params.INTERATELLARDrainList {
-		if account := statedb.GetStateObject(addr); account != nil {
-			refund.AddBalance(account.Balance())
-			account.SetBalance(new(big.Int))
-		}
+		statedb.AddBalance(params.INTERSTELLARRefundContract, statedb.GetBalance(addr))
+		statedb.SetBalance(addr, new(big.Int))
 	}
 }
