@@ -23,7 +23,7 @@ import (
 )
 
 type account struct {
-	stateObject *stateObject
+	stateObject *StateObject
 	nstart      uint64
 	nonces      []bool
 }
@@ -128,7 +128,7 @@ func (ms *ManagedState) getAccount(addr common.Address) *account {
 	} else {
 		// Always make sure the state account nonce isn't actually higher
 		// than the tracked one.
-		so := ms.StateDB.getStateObject(addr)
+		so := ms.StateDB.GetStateObject(addr)
 		if so != nil && uint64(len(account.nonces))+account.nstart < so.Nonce() {
 			ms.accounts[addr] = newAccount(so)
 		}
@@ -138,6 +138,6 @@ func (ms *ManagedState) getAccount(addr common.Address) *account {
 	return ms.accounts[addr]
 }
 
-func newAccount(so *stateObject) *account {
+func newAccount(so *StateObject) *account {
 	return &account{so, so.Nonce(), nil}
 }

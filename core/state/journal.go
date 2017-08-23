@@ -34,7 +34,7 @@ type (
 		account *common.Address
 	}
 	resetObjectChange struct {
-		prev *stateObject
+		prev *StateObject
 	}
 	suicideChange struct {
 		account     *common.Address
@@ -86,7 +86,7 @@ func (ch resetObjectChange) undo(s *StateDB) {
 }
 
 func (ch suicideChange) undo(s *StateDB) {
-	obj := s.getStateObject(*ch.account)
+	obj := s.GetStateObject(*ch.account)
 	if obj != nil {
 		obj.suicided = ch.prev
 		obj.setBalance(ch.prevbalance)
@@ -103,19 +103,19 @@ func (ch touchChange) undo(s *StateDB) {
 }
 
 func (ch balanceChange) undo(s *StateDB) {
-	s.getStateObject(*ch.account).setBalance(ch.prev)
+	s.GetStateObject(*ch.account).setBalance(ch.prev)
 }
 
 func (ch nonceChange) undo(s *StateDB) {
-	s.getStateObject(*ch.account).setNonce(ch.prev)
+	s.GetStateObject(*ch.account).setNonce(ch.prev)
 }
 
 func (ch codeChange) undo(s *StateDB) {
-	s.getStateObject(*ch.account).setCode(common.BytesToHash(ch.prevhash), ch.prevcode)
+	s.GetStateObject(*ch.account).setCode(common.BytesToHash(ch.prevhash), ch.prevcode)
 }
 
 func (ch storageChange) undo(s *StateDB) {
-	s.getStateObject(*ch.account).setState(ch.key, ch.prevalue)
+	s.GetStateObject(*ch.account).setState(ch.key, ch.prevalue)
 }
 
 func (ch refundChange) undo(s *StateDB) {

@@ -105,17 +105,17 @@ func Execute(code, input []byte, cfg *Config) ([]byte, *state.StateDB, error) {
 		cfg.State, _ = state.New(common.Hash{}, db)
 	}
 	var (
-		address = common.StringToAddress("contract")
-		vmenv   = NewEnv(cfg, cfg.State)
-		sender  = vm.AccountRef(cfg.Origin)
+		vmenv    = NewEnv(cfg, cfg.State)
+		sender   = cfg.State.CreateAccount(cfg.Origin)
+		receiver = cfg.State.CreateAccount(common.StringToAddress("contract"))
 	)
-	cfg.State.CreateAccount(address)
 	// set the receiver's (the executing contract) code for execution.
-	cfg.State.SetCode(address, code)
+	receiver.SetCode(crypto.Keccak256Hash(code), code)
+
 	// Call the code with the given configuration.
 	ret, _, err := vmenv.Call(
 		sender,
-		common.StringToAddress("contract"),
+		receiver.Address(),
 		input,
 		cfg.GasLimit,
 		cfg.Value,
@@ -137,7 +137,7 @@ func Create(input []byte, cfg *Config) ([]byte, common.Address, error) {
 	}
 	var (
 		vmenv  = NewEnv(cfg, cfg.State)
-		sender = vm.AccountRef(cfg.Origin)
+		sender = cfg.State.CreateAccount(cfg.Origin)
 	)
 
 	// Call the code with the given configuration.
