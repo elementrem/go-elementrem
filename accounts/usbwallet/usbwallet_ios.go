@@ -14,16 +14,25 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-elementrem library. If not, see <http://www.gnu.org/licenses/>.
 
-// +build !ios
+// This file contains the implementation for interacting with the Ledger hardware
+// wallets. The wire protocol spec can be found in the Ledger Blue GitHub repo:
+// https://raw.githubusercontent.com/LedgerHQ/blue-app-ele/master/doc/eleapp.asc
 
-// Package usbwallet implements support for USB hardware wallets.
+// +build ios
+
 package usbwallet
 
-import "github.com/karalabe/gousb/usb"
+import (
+	"errors"
 
-// deviceID is a combined vendor/product identifier to uniquely identify a USB
-// hardware device.
-type deviceID struct {
-	Vendor  usb.ID // The Vendor identifer
-	Product usb.ID // The Product identifier
+	"github.com/elementrem/go-elementrem/accounts"
+)
+
+// Here be dragons! There is no USB support on iOS.
+
+// ErrIOSNotSupported is returned for all USB hardware backends on iOS.
+var ErrIOSNotSupported = errors.New("no USB support on iOS")
+
+func NewLedgerHub() (accounts.Backend, error) {
+	return nil, ErrIOSNotSupported
 }

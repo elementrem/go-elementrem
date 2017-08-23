@@ -18,6 +18,8 @@
 // wallets. The wire protocol spec can be found in the Ledger Blue GitHub repo:
 // https://raw.githubusercontent.com/LedgerHQ/blue-app-ele/master/doc/eleapp.asc
 
+// +build !ios
+
 package usbwallet
 
 import (
@@ -37,7 +39,7 @@ import (
 	"github.com/elementrem/go-elementrem/logger"
 	"github.com/elementrem/go-elementrem/logger/glog"
 	"github.com/elementrem/go-elementrem/rlp"
-	"github.com/karalabe/hid"
+	"github.com/karalabe/gousb/usb"
 	"golang.org/x/net/context"
 )
 
@@ -72,22 +74,22 @@ const (
 	ledgerP2ReturnAddressChainCode  ledgerParam2 = 0x01 // Require a user confirmation before returning the address
 )
 
-// errReplyInvalidHeader is the error message returned by a Ledger data exchange
+// errReplyInvalidHeader is the error message returned by a Ledfer data exchange
 // if the device replies with a mismatching header. This usually means the device
 // is in browser mode.
 var errReplyInvalidHeader = errors.New("invalid reply header")
 
-// errInvalidVersionReply is the error message returned by a Ledger version retrieval
-// when a response does arrive, but it does not contain the expected data.
-var errInvalidVersionReply = errors.New("invalid version reply")
-
 // ledgerWallet represents a live USB Ledger hardware wallet.
 type ledgerWallet struct {
-	url *accounts.URL // Textual URL uniquely identifying this wallet
+	context    *usb.Context  // USB context to interface libusb through
+	hardwareID deviceID      // USB identifiers to identify this device type
+	locationID uint16        // USB bus and address to identify this device instance
+	url        *accounts.URL // Textual URL uniquely identifying this wallet
 
-	info    hid.DeviceInfo // Known USB device infos about the wallet
-	device  *hid.Device    // USB device advertising itself as a Ledger wallet
-	failure error          // Any failure that would make the device unusable
+	device  *usb.Device  // USB device advertising itself as a Ledger wallet
+	input   usb.Endpoint // Input endpoint to send data to this device
+	output  usb.Endpoint // Output endpoint to receive data from this device
+	failure error        // Any failure that would make the device unusable
 
 	version  [3]byte                                    // Current version of the Ledger Elementrem app (zero if app is offline)
 	browser  bool                                       // Flag whether the Ledger is in browser mode (reply channel mismatch)
@@ -181,12 +183,59 @@ func (w *ledgerWallet) Open(passphrase string) error {
 		return accounts.ErrWalletAlreadyOpen
 	}
 	// Otherwise iterate over all USB devices and find this again (no way to directly do this)
-	device, err := w.info.Open()
+	// Iterate over all attached devices and fetch those seemingly Ledger
+	devices, err := w.context.ListDevices(func(desc *usb.Descriptor) bool {
+		// Only open this single specific device
+		return desc.Vendor == w.hardwareID.Vendor && desc.Product == w.hardwareID.Product &&
+			uint16(desc.Bus)<<8+uint16(desc.Address) == w.locationID
+	})
 	if err != nil {
 		return err
 	}
+	if len(devices) == 0 {
+		return accounts.ErrUnknownWallet
+	}
+	// Device opened, attach to the input and output endpoints
+	device := devices[0]
+
+	var invalid string
+	switch {
+	case len(device.Descriptor.Configs) == 0:
+		invalid = "no endpoint config available"
+	case len(device.Descriptor.Configs[0].Interfaces) == 0:
+		invalid = "no endpoint interface available"
+	case len(device.Descriptor.Configs[0].Interfaces[0].Setups) == 0:
+		invalid = "no endpoint setup available"
+	case len(device.Descriptor.Configs[0].Interfaces[0].Setups[0].Endpoints) < 2:
+		invalid = "not enough IO endpoints available"
+	}
+	if invalid != "" {
+		device.Close()
+		return fmt.Errorf("ledger wallet [%s] invalid: %s", w.url, invalid)
+	}
+	// Open the input and output endpoints to the device
+	input, err := device.OpenEndpoint(
+		device.Descriptor.Configs[0].Config,
+		device.Descriptor.Configs[0].Interfaces[0].Number,
+		device.Descriptor.Configs[0].Interfaces[0].Setups[0].Number,
+		device.Descriptor.Configs[0].Interfaces[0].Setups[0].Endpoints[1].Address,
+	)
+	if err != nil {
+		device.Close()
+		return fmt.Errorf("ledger wallet [%s] input open failed: %v", w.url, err)
+	}
+	output, err := device.OpenEndpoint(
+		device.Descriptor.Configs[0].Config,
+		device.Descriptor.Configs[0].Interfaces[0].Number,
+		device.Descriptor.Configs[0].Interfaces[0].Setups[0].Number,
+		device.Descriptor.Configs[0].Interfaces[0].Setups[0].Endpoints[0].Address,
+	)
+	if err != nil {
+		device.Close()
+		return fmt.Errorf("ledger wallet [%s] output open failed: %v", w.url, err)
+	}
 	// Wallet seems to be successfully opened, guess if the Elementrem app is running
-	w.device = device
+	w.device, w.input, w.output = device, input, output
 	w.commsLock = make(chan struct{}, 1)
 	w.commsLock <- struct{}{} // Enable lock
 
@@ -249,13 +298,13 @@ func (w *ledgerWallet) heartbeat() {
 		w.commsLock <- struct{}{}
 		w.stateLock.RUnlock()
 
-		if err != nil && err != errInvalidVersionReply {
+		if err == usb.ERROR_IO || err == usb.ERROR_NO_DEVICE {
 			w.stateLock.Lock() // Lock state to tear the wallet down
 			w.failure = err
 			w.close()
 			w.stateLock.Unlock()
 		}
-		// Ignore non hardware related errors
+		// Ignore uninteresting errors
 		err = nil
 	}
 	// In case of error, wait for termination
@@ -314,13 +363,13 @@ func (w *ledgerWallet) close() error {
 		return nil
 	}
 	// Close the device, clear everything, then return
-	w.device.Close()
-	w.device = nil
+	err := w.device.Close()
 
+	w.device, w.input, w.output = nil, nil, nil
 	w.browser, w.version = false, [3]byte{}
 	w.accounts, w.paths = nil, nil
 
-	return nil
+	return err
 }
 
 // Accounts implements accounts.Wallet, returning the list of accounts pinned to
@@ -615,7 +664,7 @@ func (w *ledgerWallet) ledgerVersion() ([3]byte, error) {
 		return [3]byte{}, err
 	}
 	if len(reply) != 4 {
-		return [3]byte{}, errInvalidVersionReply
+		return [3]byte{}, errors.New("reply not of correct size")
 	}
 	// Cache the version for future reference
 	var version [3]byte
@@ -719,6 +768,10 @@ func (w *ledgerWallet) ledgerDerive(derivationPath []uint32) (common.Address, er
 //   signature R | 32 bytes
 //   signature S | 32 bytes
 func (w *ledgerWallet) ledgerSign(derivationPath []uint32, address common.Address, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
+	// We need to modify the timeouts to account for user feedback
+	defer func(old time.Duration) { w.device.ReadTimeout = old }(w.device.ReadTimeout)
+	w.device.ReadTimeout = time.Hour * 24 * 30 // Timeout requires a Ledger power cycle, only if you must
+
 	// Flatten the derivation path into the Ledger request
 	path := make([]byte, 1+4*len(derivationPath))
 	path[0] = byte(len(derivationPath))
@@ -850,9 +903,9 @@ func (w *ledgerWallet) ledgerExchange(opcode ledgerOpcode, p1 ledgerParam1, p2 l
 		}
 		// Send over to the device
 		if glog.V(logger.Detail) {
-			glog.Infof("-> %s: %x", w.device.Path, chunk)
+			glog.Infof("-> %03d.%03d: %x", w.device.Bus, w.device.Address, chunk)
 		}
-		if _, err := w.device.Write(chunk); err != nil {
+		if _, err := w.input.Write(chunk); err != nil {
 			return nil, err
 		}
 	}
@@ -861,11 +914,11 @@ func (w *ledgerWallet) ledgerExchange(opcode ledgerOpcode, p1 ledgerParam1, p2 l
 	chunk = chunk[:64] // Yeah, we surely have enough space
 	for {
 		// Read the next chunk from the Ledger wallet
-		if _, err := io.ReadFull(w.device, chunk); err != nil {
+		if _, err := io.ReadFull(w.output, chunk); err != nil {
 			return nil, err
 		}
 		if glog.V(logger.Detail) {
-			glog.Infof("<- %s: %x", w.device.Path, chunk)
+			glog.Infof("<- %03d.%03d: %x", w.device.Bus, w.device.Address, chunk)
 		}
 		// Make sure the transport header matches
 		if chunk[0] != 0x01 || chunk[1] != 0x01 || chunk[2] != 0x05 {
