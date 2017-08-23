@@ -14,19 +14,22 @@ const (
 	vlqContinuationBit = vlqBase
 )
 
-var decodeMap [256]byte
+var (
+	decodeMap [256]int
+)
 
 func init() {
 	for i := 0; i < len(encodeStd); i++ {
-		decodeMap[encodeStd[i]] = byte(i)
+		decodeMap[encodeStd[i]] = i
 	}
 }
 
 func toVLQSigned(n int) int {
 	if n < 0 {
 		return -n<<1 + 1
+	} else {
+		return n << 1
 	}
-	return n << 1
 }
 
 func fromVLQSigned(n int) int {
@@ -48,7 +51,7 @@ func NewEncoder(w io.ByteWriter) *Encoder {
 	}
 }
 
-func (enc Encoder) Encode(n int) error {
+func (enc *Encoder) Encode(n int) error {
 	n = toVLQSigned(n)
 	for digit := vlqContinuationBit; digit&vlqContinuationBit != 0; {
 		digit = n & vlqBaseMask
@@ -56,7 +59,6 @@ func (enc Encoder) Encode(n int) error {
 		if n > 0 {
 			digit |= vlqContinuationBit
 		}
-
 		err := enc.w.WriteByte(encodeStd[digit])
 		if err != nil {
 			return err
@@ -75,7 +77,7 @@ func NewDecoder(r io.ByteReader) *Decoder {
 	}
 }
 
-func (dec Decoder) Decode() (n int, err error) {
+func (dec *Decoder) Decode() (n int, err error) {
 	shift := uint(0)
 	for continuation := true; continuation; {
 		c, err := dec.r.ReadByte()
@@ -83,9 +85,10 @@ func (dec Decoder) Decode() (n int, err error) {
 			return 0, err
 		}
 
-		c = decodeMap[c]
-		continuation = c&vlqContinuationBit != 0
-		n += int(c&vlqBaseMask) << shift
+		digit := decodeMap[c]
+		continuation = digit&vlqContinuationBit != 0
+		digit &= vlqBaseMask
+		n = n + digit<<shift
 		shift += vlqBaseShift
 	}
 	return fromVLQSigned(n), nil

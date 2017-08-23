@@ -623,9 +623,6 @@ mainLoop:
 		case rune:
 			switch v {
 			case cr, lf:
-				if s.needRefresh {
-					s.refresh(p, line, pos)
-				}
 				if s.multiLineMode {
 					s.resetMultiLine(p, line, pos)
 				}
@@ -1013,9 +1010,6 @@ mainLoop:
 		case rune:
 			switch v {
 			case cr, lf:
-				if s.needRefresh {
-					s.refresh(p, line, pos)
-				}
 				if s.multiLineMode {
 					s.resetMultiLine(p, line, pos)
 				}

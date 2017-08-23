@@ -114,7 +114,7 @@ http://godoc.org/github.com/robertkrimen/otto/parser
 Parse and return an AST
 
 ```go
-filename := "" // A filename is optional
+filenamee := "" // A filename is optional
 src := `
     // Sample xyzzy example
     (function(){

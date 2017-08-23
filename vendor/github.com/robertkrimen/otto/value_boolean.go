@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math"
 	"reflect"
-	"unicode/utf16"
 )
 
 func (value Value) bool() bool {
@@ -33,8 +32,6 @@ func (value Value) bool() bool {
 		return true
 	case string:
 		return 0 != len(value)
-	case []uint16:
-		return 0 != len(utf16.Decode(value))
 	}
 	if value.IsObject() {
 		return true
