@@ -198,11 +198,10 @@ func initialize() {
 				utils.Fatalf("Failed to read Mail Server password: %s", err)
 			}
 		}
-		shh = whisper.New()
-		shh.RegisterServer(&mailServer)
+		shh = whisper.NewWhisper(&mailServer)
 		mailServer.Init(shh, *argDBPath, msPassword, *argServerPoW)
 	} else {
-		shh = whisper.New()
+		shh = whisper.NewWhisper(nil)
 	}
 
 	asymKey = shh.NewIdentity()

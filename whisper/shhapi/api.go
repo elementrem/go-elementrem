@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-elementrem library. If not, see <http://www.gnu.org/licenses/>.
 
-package whisperv5
+package shhapi
 
 import (
 	"encoding/json"
@@ -27,18 +27,33 @@ import (
 	"github.com/elementrem/go-elementrem/crypto"
 	"github.com/elementrem/go-elementrem/logger"
 	"github.com/elementrem/go-elementrem/logger/glog"
+	"github.com/elementrem/go-elementrem/rpc"
+	"github.com/elementrem/go-elementrem/whisper/whisperv5"
 )
 
 var whisperOffLineErr = errors.New("whisper is offline")
 
 // PublicWhisperAPI provides the whisper RPC service.
 type PublicWhisperAPI struct {
-	whisper *Whisper
+	whisper *whisperv5.Whisper
 }
 
 // NewPublicWhisperAPI create a new RPC whisper service.
-func NewPublicWhisperAPI(w *Whisper) *PublicWhisperAPI {
+func NewPublicWhisperAPI() *PublicWhisperAPI {
+	w := whisperv5.NewWhisper(nil)
 	return &PublicWhisperAPI{whisper: w}
+}
+
+// APIs returns the RPC descriptors the Whisper implementation offers
+func APIs() []rpc.API {
+	return []rpc.API{
+		{
+			Namespace: whisperv5.ProtocolName,
+			Version:   whisperv5.ProtocolVersionStr,
+			Service:   NewPublicWhisperAPI(),
+			Public:    true,
+		},
+	}
 }
 
 // Start starts the Whisper worker threads.
@@ -156,11 +171,11 @@ func (api *PublicWhisperAPI) NewFilter(args WhisperFilterArgs) (uint32, error) {
 		return 0, whisperOffLineErr
 	}
 
-	filter := Filter{
+	filter := whisperv5.Filter{
 		Src:       crypto.ToECDSAPub(common.FromHex(args.From)),
 		KeySym:    api.whisper.GetSymKey(args.KeyName),
 		PoW:       args.PoW,
-		Messages:  make(map[common.Hash]*ReceivedMessage),
+		Messages:  make(map[common.Hash]*whisperv5.ReceivedMessage),
 		AcceptP2P: args.AcceptP2P,
 	}
 	if len(filter.KeySym) > 0 {
@@ -194,7 +209,7 @@ func (api *PublicWhisperAPI) NewFilter(args WhisperFilterArgs) (uint32, error) {
 
 	if len(args.To) > 0 {
 		dst := crypto.ToECDSAPub(common.FromHex(args.To))
-		if !ValidatePublicKey(dst) {
+		if !whisperv5.ValidatePublicKey(dst) {
 			info := "NewFilter: Invalid 'To' address"
 			glog.V(logger.Error).Infof(info)
 			return 0, errors.New(info)
@@ -208,7 +223,7 @@ func (api *PublicWhisperAPI) NewFilter(args WhisperFilterArgs) (uint32, error) {
 	}
 
 	if len(args.From) > 0 {
-		if !ValidatePublicKey(filter.Src) {
+		if !whisperv5.ValidatePublicKey(filter.Src) {
 			info := "NewFilter: Invalid 'From' address"
 			glog.V(logger.Error).Infof(info)
 			return 0, errors.New(info)
@@ -241,7 +256,7 @@ func (api *PublicWhisperAPI) GetMessages(filterId uint32) []WhisperMessage {
 }
 
 // toWhisperMessages converts a Whisper message to a RPC whisper message.
-func toWhisperMessages(messages []*ReceivedMessage) []WhisperMessage {
+func toWhisperMessages(messages []*whisperv5.ReceivedMessage) []WhisperMessage {
 	msgs := make([]WhisperMessage, len(messages))
 	for i, msg := range messages {
 		msgs[i] = NewWhisperMessage(msg)
@@ -255,7 +270,7 @@ func (api *PublicWhisperAPI) Post(args PostArgs) error {
 		return whisperOffLineErr
 	}
 
-	params := MessageParams{
+	params := whisperv5.MessageParams{
 		TTL:      args.TTL,
 		Dst:      crypto.ToECDSAPub(common.FromHex(args.To)),
 		KeySym:   api.whisper.GetSymKey(args.KeyName),
@@ -268,7 +283,7 @@ func (api *PublicWhisperAPI) Post(args PostArgs) error {
 
 	if len(args.From) > 0 {
 		pub := crypto.ToECDSAPub(common.FromHex(args.From))
-		if !ValidatePublicKey(pub) {
+		if !whisperv5.ValidatePublicKey(pub) {
 			info := "Post: Invalid 'From' address"
 			glog.V(logger.Error).Infof(info)
 			return errors.New(info)
@@ -296,7 +311,7 @@ func (api *PublicWhisperAPI) Post(args PostArgs) error {
 		if params.Src == nil && filter.Src != nil {
 			params.Src = filter.KeyAsym
 		}
-		if (params.Topic == TopicType{}) {
+		if (params.Topic == whisperv5.TopicType{}) {
 			sz := len(filter.Topics)
 			if sz < 1 {
 				info := fmt.Sprintf("Post: no topics in filter # %d", args.FilterID)
@@ -332,7 +347,7 @@ func (api *PublicWhisperAPI) Post(args PostArgs) error {
 	}
 
 	if len(args.To) > 0 {
-		if !ValidatePublicKey(params.Dst) {
+		if !whisperv5.ValidatePublicKey(params.Dst) {
 			info := "Post: Invalid 'To' address"
 			glog.V(logger.Error).Infof(info)
 			return errors.New(info)
@@ -340,18 +355,18 @@ func (api *PublicWhisperAPI) Post(args PostArgs) error {
 	}
 
 	// encrypt and send
-	message := NewSentMessage(&params)
+	message := whisperv5.NewSentMessage(&params)
 	envelope, err := message.Wrap(&params)
 	if err != nil {
 		glog.V(logger.Error).Infof(err.Error())
 		return err
 	}
-	if len(envelope.Data) > MaxMessageLength {
+	if len(envelope.Data) > whisperv5.MaxMessageLength {
 		info := "Post: message is too big"
 		glog.V(logger.Error).Infof(info)
 		return errors.New(info)
 	}
-	if (envelope.Topic == TopicType{} && envelope.IsSymmetric()) {
+	if (envelope.Topic == whisperv5.TopicType{} && envelope.IsSymmetric()) {
 		info := "Post: topic is missing for symmetric encryption"
 		glog.V(logger.Error).Infof(info)
 		return errors.New(info)
@@ -365,17 +380,17 @@ func (api *PublicWhisperAPI) Post(args PostArgs) error {
 }
 
 type PostArgs struct {
-	TTL      uint32        `json:"ttl"`
-	From     string        `json:"from"`
-	To       string        `json:"to"`
-	KeyName  string        `json:"keyname"`
-	Topic    TopicType     `json:"topic"`
-	Padding  hexutil.Bytes `json:"padding"`
-	Payload  hexutil.Bytes `json:"payload"`
-	WorkTime uint32        `json:"worktime"`
-	PoW      float64       `json:"pow"`
-	FilterID uint32        `json:"filterID"`
-	PeerID   hexutil.Bytes `json:"peerID"`
+	TTL      uint32              `json:"ttl"`
+	From     string              `json:"from"`
+	To       string              `json:"to"`
+	KeyName  string              `json:"keyname"`
+	Topic    whisperv5.TopicType `json:"topic"`
+	Padding  hexutil.Bytes       `json:"padding"`
+	Payload  hexutil.Bytes       `json:"payload"`
+	WorkTime uint32              `json:"worktime"`
+	PoW      float64             `json:"pow"`
+	FilterID uint32              `json:"filterID"`
+	PeerID   hexutil.Bytes       `json:"peerID"`
 }
 
 type WhisperFilterArgs struct {
@@ -383,7 +398,7 @@ type WhisperFilterArgs struct {
 	From      string
 	KeyName   string
 	PoW       float64
-	Topics    []TopicType
+	Topics    []whisperv5.TopicType
 	AcceptP2P bool
 }
 
@@ -422,13 +437,13 @@ func (args *WhisperFilterArgs) UnmarshalJSON(b []byte) (err error) {
 				return fmt.Errorf("topic[%d] is not a string", i)
 			}
 		}
-		topicsDecoded := make([]TopicType, len(topics))
+		topicsDecoded := make([]whisperv5.TopicType, len(topics))
 		for j, s := range topics {
 			x := common.FromHex(s)
-			if x == nil || len(x) != TopicLength {
+			if x == nil || len(x) != whisperv5.TopicLength {
 				return fmt.Errorf("topic[%d] is invalid", j)
 			}
-			topicsDecoded[j] = BytesToTopic(x)
+			topicsDecoded[j] = whisperv5.BytesToTopic(x)
 		}
 		args.Topics = topicsDecoded
 	}
@@ -449,7 +464,7 @@ type WhisperMessage struct {
 }
 
 // NewWhisperMessage converts an internal message into an API version.
-func NewWhisperMessage(message *ReceivedMessage) WhisperMessage {
+func NewWhisperMessage(message *whisperv5.ReceivedMessage) WhisperMessage {
 	return WhisperMessage{
 		Payload: common.ToHex(message.Payload),
 		Padding: common.ToHex(message.Padding),
