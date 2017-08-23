@@ -311,7 +311,7 @@ func (self *StateDB) HasSuicided(addr common.Address) bool {
 
 // AddBalance adds amount to the account associated with addr
 func (self *StateDB) AddBalance(addr common.Address, amount *big.Int) {
-	stateObject := self.GetOrNewStateObject(addr)
+	stateObject := self.GetOrNewstateObject(addr)
 	if stateObject != nil {
 		stateObject.AddBalance(amount)
 	}
@@ -319,35 +319,35 @@ func (self *StateDB) AddBalance(addr common.Address, amount *big.Int) {
 
 // SubBalance subtracts amount from the account associated with addr
 func (self *StateDB) SubBalance(addr common.Address, amount *big.Int) {
-	stateObject := self.GetOrNewStateObject(addr)
+	stateObject := self.GetOrNewstateObject(addr)
 	if stateObject != nil {
 		stateObject.SubBalance(amount)
 	}
 }
 
 func (self *StateDB) SetBalance(addr common.Address, amount *big.Int) {
-	stateObject := self.GetOrNewStateObject(addr)
+	stateObject := self.GetOrNewstateObject(addr)
 	if stateObject != nil {
 		stateObject.SetBalance(amount)
 	}
 }
 
 func (self *StateDB) SetNonce(addr common.Address, nonce uint64) {
-	stateObject := self.GetOrNewStateObject(addr)
+	stateObject := self.GetOrNewstateObject(addr)
 	if stateObject != nil {
 		stateObject.SetNonce(nonce)
 	}
 }
 
 func (self *StateDB) SetCode(addr common.Address, code []byte) {
-	stateObject := self.GetOrNewStateObject(addr)
+	stateObject := self.GetOrNewstateObject(addr)
 	if stateObject != nil {
 		stateObject.SetCode(crypto.Keccak256Hash(code), code)
 	}
 }
 
 func (self *StateDB) SetState(addr common.Address, key common.Hash, value common.Hash) {
-	stateObject := self.GetOrNewStateObject(addr)
+	stateObject := self.GetOrNewstateObject(addr)
 	if stateObject != nil {
 		stateObject.SetState(self.db, key, value)
 	}
@@ -377,8 +377,8 @@ func (self *StateDB) Suicide(addr common.Address) bool {
 // Setting, updating & deleting state object methods
 //
 
-// updateStateObject writes the given object to the trie.
-func (self *StateDB) updateStateObject(stateObject *stateObject) {
+// updatestateObject writes the given object to the trie.
+func (self *StateDB) updatestateObject(stateObject *stateObject) {
 	addr := stateObject.Address()
 	data, err := rlp.EncodeToBytes(stateObject)
 	if err != nil {
@@ -387,8 +387,8 @@ func (self *StateDB) updateStateObject(stateObject *stateObject) {
 	self.trie.Update(addr[:], data)
 }
 
-// deleteStateObject removes the given object from the state trie.
-func (self *StateDB) deleteStateObject(stateObject *stateObject) {
+// deletestateObject removes the given object from the state trie.
+func (self *StateDB) deletestateObject(stateObject *stateObject) {
 	stateObject.deleted = true
 	addr := stateObject.Address()
 	self.trie.Delete(addr[:])
@@ -415,17 +415,17 @@ func (self *StateDB) getStateObject(addr common.Address) (stateObject *stateObje
 		return nil
 	}
 	// Insert into the live set.
-	obj := newObject(self, addr, data, self.MarkStateObjectDirty)
-	self.setStateObject(obj)
+	obj := newObject(self, addr, data, self.MarkstateObjectDirty)
+	self.setstateObject(obj)
 	return obj
 }
 
-func (self *StateDB) setStateObject(object *stateObject) {
+func (self *StateDB) setstateObject(object *stateObject) {
 	self.stateObjects[object.Address()] = object
 }
 
 // Retrieve a state object or create a new state object if nil
-func (self *StateDB) GetOrNewStateObject(addr common.Address) *stateObject {
+func (self *StateDB) GetOrNewstateObject(addr common.Address) *stateObject {
 	stateObject := self.getStateObject(addr)
 	if stateObject == nil || stateObject.deleted {
 		stateObject, _ = self.createObject(addr)
@@ -433,9 +433,9 @@ func (self *StateDB) GetOrNewStateObject(addr common.Address) *stateObject {
 	return stateObject
 }
 
-// MarkStateObjectDirty adds the specified object to the dirty map to avoid costly
+// MarkstateObjectDirty adds the specified object to the dirty map to avoid costly
 // state object cache iteration to find a handful of modified ones.
-func (self *StateDB) MarkStateObjectDirty(addr common.Address) {
+func (self *StateDB) MarkstateObjectDirty(addr common.Address) {
 	self.stateObjectsDirty[addr] = struct{}{}
 }
 
@@ -443,7 +443,7 @@ func (self *StateDB) MarkStateObjectDirty(addr common.Address) {
 // the given address, it is overwritten and returned as the second return value.
 func (self *StateDB) createObject(addr common.Address) (newobj, prev *stateObject) {
 	prev = self.getStateObject(addr)
-	newobj = newObject(self, addr, Account{}, self.MarkStateObjectDirty)
+	newobj = newObject(self, addr, Account{}, self.MarkstateObjectDirty)
 	newobj.setNonce(0) // sets the object to dirty
 	if prev == nil {
 		if glog.V(logger.Debug) {
@@ -453,7 +453,7 @@ func (self *StateDB) createObject(addr common.Address) (newobj, prev *stateObjec
 	} else {
 		self.journal = append(self.journal, resetObjectChange{prev: prev})
 	}
-	self.setStateObject(newobj)
+	self.setstateObject(newobj)
 	return newobj, prev
 }
 
@@ -516,7 +516,7 @@ func (self *StateDB) Copy() *StateDB {
 	}
 	// Copy the dirty states, logs, and preimages
 	for addr := range self.stateObjectsDirty {
-		state.stateObjects[addr] = self.stateObjects[addr].deepCopy(state, state.MarkStateObjectDirty)
+		state.stateObjects[addr] = self.stateObjects[addr].deepCopy(state, state.MarkstateObjectDirty)
 		state.stateObjectsDirty[addr] = struct{}{}
 	}
 	for hash, logs := range self.logs {
@@ -572,10 +572,10 @@ func (s *StateDB) IntermediateRoot(deleteEmptyObjects bool) common.Hash {
 	for addr := range s.stateObjectsDirty {
 		stateObject := s.stateObjects[addr]
 		if stateObject.suicided || (deleteEmptyObjects && stateObject.empty()) {
-			s.deleteStateObject(stateObject)
+			s.deletestateObject(stateObject)
 		} else {
 			stateObject.updateRoot(s.db)
-			s.updateStateObject(stateObject)
+			s.updatestateObject(stateObject)
 		}
 	}
 	// Invalidate journal because reverting across transactions is not allowed.
@@ -637,7 +637,7 @@ func (s *StateDB) commit(dbw trie.DatabaseWriter, deleteEmptyObjects bool) (root
 		case stateObject.suicided || (isDirty && deleteEmptyObjects && stateObject.empty()):
 			// If the object has been removed, don't bother syncing it
 			// and just mark it for deletion in the trie.
-			s.deleteStateObject(stateObject)
+			s.deletestateObject(stateObject)
 		case isDirty:
 			// Write any contract code associated with the state object
 			if stateObject.code != nil && stateObject.dirtyCode {
@@ -651,7 +651,7 @@ func (s *StateDB) commit(dbw trie.DatabaseWriter, deleteEmptyObjects bool) (root
 				return common.Hash{}, err
 			}
 			// Update the object in the main account trie.
-			s.updateStateObject(stateObject)
+			s.updatestateObject(stateObject)
 		}
 		delete(s.stateObjectsDirty, addr)
 	}
