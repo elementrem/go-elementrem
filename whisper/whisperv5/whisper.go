@@ -272,16 +272,16 @@ func (w *Whisper) GetSymKey(name string) []byte {
 
 // Watch installs a new message handler to run in case a matching packet arrives
 // from the whisper network.
-func (w *Whisper) Watch(f *Filter) (string, error) {
+func (w *Whisper) Watch(f *Filter) uint32 {
 	return w.filters.Install(f)
 }
 
-func (w *Whisper) GetFilter(id string) *Filter {
+func (w *Whisper) GetFilter(id uint32) *Filter {
 	return w.filters.Get(id)
 }
 
 // Unwatch removes an installed message handler.
-func (w *Whisper) Unwatch(id string) {
+func (w *Whisper) Unwatch(id uint32) {
 	w.filters.Uninstall(id)
 }
 
@@ -575,7 +575,7 @@ func (w *Whisper) Envelopes() []*Envelope {
 }
 
 // Messages retrieves all the decrypted messages matching a filter id.
-func (w *Whisper) Messages(id string) []*ReceivedMessage {
+func (w *Whisper) Messages(id uint32) []*ReceivedMessage {
 	result := make([]*ReceivedMessage, 0)
 	w.poolMu.RLock()
 	defer w.poolMu.RUnlock()
