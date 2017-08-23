@@ -32,6 +32,7 @@ import (
 	"github.com/elementrem/go-elementrem/accounts"
 	"github.com/elementrem/go-elementrem/common"
 	"github.com/elementrem/go-elementrem/crypto"
+	"github.com/elementrem/go-elementrem/crypto/secp256k1"
 	"github.com/pborman/uuid"
 )
 
@@ -156,7 +157,7 @@ func NewKeyForDirectICAP(rand io.Reader) *Key {
 		panic("key generation: could not read from random source: " + err.Error())
 	}
 	reader := bytes.NewReader(randBytes)
-	privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), reader)
+	privateKeyECDSA, err := ecdsa.GenerateKey(secp256k1.S256(), reader)
 	if err != nil {
 		panic("key generation: ecdsa.GenerateKey failed: " + err.Error())
 	}
@@ -168,7 +169,7 @@ func NewKeyForDirectICAP(rand io.Reader) *Key {
 }
 
 func newKey(rand io.Reader) (*Key, error) {
-	privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), rand)
+	privateKeyECDSA, err := ecdsa.GenerateKey(secp256k1.S256(), rand)
 	if err != nil {
 		return nil, err
 	}
