@@ -30,7 +30,6 @@ import (
 
 	"github.com/elementrem/go-elementrem/common"
 	"github.com/elementrem/go-elementrem/crypto"
-	"github.com/elementrem/go-elementrem/crypto/ecies"
 	"github.com/elementrem/go-elementrem/logger"
 	"github.com/elementrem/go-elementrem/logger/glog"
 	"golang.org/x/crypto/pbkdf2"
@@ -164,7 +163,7 @@ func (msg *SentMessage) encryptAsymmetric(key *ecdsa.PublicKey) error {
 	if !ValidatePublicKey(key) {
 		return fmt.Errorf("Invalid public key provided for asymmetric encryption")
 	}
-	encrypted, err := ecies.Encrypt(crand.Reader, ecies.ImportECDSAPublic(key), msg.Raw, nil, nil)
+	encrypted, err := crypto.Encrypt(key, msg.Raw)
 	if err == nil {
 		msg.Raw = encrypted
 	}
@@ -294,7 +293,7 @@ func (msg *ReceivedMessage) decryptSymmetric(key []byte, salt []byte, nonce []by
 
 // decryptAsymmetric decrypts an encrypted payload with a private key.
 func (msg *ReceivedMessage) decryptAsymmetric(key *ecdsa.PrivateKey) error {
-	decrypted, err := ecies.ImportECDSA(key).Decrypt(crand.Reader, msg.Raw, nil, nil)
+	decrypted, err := crypto.Decrypt(key, msg.Raw)
 	if err == nil {
 		msg.Raw = decrypted
 	}

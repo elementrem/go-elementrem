@@ -21,13 +21,11 @@ package whisperv2
 
 import (
 	"crypto/ecdsa"
-	crand "crypto/rand"
 	"math/rand"
 	"time"
 
 	"github.com/elementrem/go-elementrem/common"
 	"github.com/elementrem/go-elementrem/crypto"
-	"github.com/elementrem/go-elementrem/crypto/ecies"
 	"github.com/elementrem/go-elementrem/logger"
 	"github.com/elementrem/go-elementrem/logger/glog"
 )
@@ -133,13 +131,13 @@ func (self *Message) Recover() *ecdsa.PublicKey {
 
 // encrypt encrypts a message payload with a public key.
 func (self *Message) encrypt(key *ecdsa.PublicKey) (err error) {
-	self.Payload, err = ecies.Encrypt(crand.Reader, ecies.ImportECDSAPublic(key), self.Payload, nil, nil)
+	self.Payload, err = crypto.Encrypt(key, self.Payload)
 	return
 }
 
 // decrypt decrypts an encrypted payload with a private key.
 func (self *Message) decrypt(key *ecdsa.PrivateKey) error {
-	cleartext, err := ecies.ImportECDSA(key).Decrypt(crand.Reader, self.Payload, nil, nil)
+	cleartext, err := crypto.Decrypt(key, self.Payload)
 	if err == nil {
 		self.Payload = cleartext
 	}
