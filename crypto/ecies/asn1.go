@@ -42,7 +42,7 @@ import (
 	"hash"
 	"math/big"
 
-	"github.com/elementrem/go-elementrem/crypto/secp256k1"
+	elecrypto "github.com/elementrem/go-elementrem/crypto"
 )
 
 var (
@@ -120,7 +120,7 @@ func (curve secgNamedCurve) Equal(curve2 secgNamedCurve) bool {
 func namedCurveFromOID(curve secgNamedCurve) elliptic.Curve {
 	switch {
 	case curve.Equal(secgNamedCurveS256):
-		return secp256k1.S256()
+		return elecrypto.S256()
 	case curve.Equal(secgNamedCurveP256):
 		return elliptic.P256()
 	case curve.Equal(secgNamedCurveP384):
@@ -139,7 +139,7 @@ func oidFromNamedCurve(curve elliptic.Curve) (secgNamedCurve, bool) {
 		return secgNamedCurveP384, true
 	case elliptic.P521():
 		return secgNamedCurveP521, true
-	case secp256k1.S256():
+	case elecrypto.S256():
 		return secgNamedCurveS256, true
 	}
 

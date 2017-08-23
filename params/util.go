@@ -33,7 +33,7 @@ var (
 	MainNetHomesteadGasRepriceBlock = big.NewInt(1900000) // Mainnet gas reprice block
 
 	TestNetHomesteadGasRepriceHash = common.HexToHash("") // Testnet gas reprice block hash (used by fast sync)
-	MainNetHomesteadGasRepriceHash = common.HexToHash("") // Mainnet gas reprice block hash (used by fast sync)
+	MainNetHomesteadGasRepriceHash = common.HexToHash("0xa5424a91123120af253eb00ef60da314294424a8466f6cf3ac687092a726995e") // Mainnet gas reprice block hash (used by fast sync)
 
 	TestNetSpuriousDragon = big.NewInt(0)
 	MainNetSpuriousDragon = big.NewInt(1900000)

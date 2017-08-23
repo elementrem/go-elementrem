@@ -17,28 +17,29 @@
 package vm
 
 import (
-	"math/big"
-
+	"crypto/sha256"
+	
 	"github.com/elementrem/go-elementrem/common"
 	"github.com/elementrem/go-elementrem/crypto"
 	"github.com/elementrem/go-elementrem/logger"
 	"github.com/elementrem/go-elementrem/logger/glog"
 	"github.com/elementrem/go-elementrem/params"
+	"golang.org/x/crypto/ripemd160"
 )
 
 // Precompiled contract is the basic interface for native Go contracts. The implementation
 // requires a deterministic gas count based on the input size of the Run method of the
 // contract.
 type PrecompiledContract interface {
-	RequiredGas(inputSize int) *big.Int // RequiredPrice calculates the contract gas use
-	Run(input []byte) []byte            // Run runs the precompiled contract
+	RequiredGas(inputSize int) uint64 // RequiredPrice calculates the contract gas use
+	Run(input []byte) []byte          // Run runs the precompiled contract
 }
 
 // Precompiled contains the default set of elementrem contracts
 var PrecompiledContracts = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{1}): &ecrecover{},
-	common.BytesToAddress([]byte{2}): &sha256{},
-	common.BytesToAddress([]byte{3}): &ripemd160{},
+	common.BytesToAddress([]byte{2}): &sha256hash{},
+	common.BytesToAddress([]byte{3}): &ripemd160hash{},
 	common.BytesToAddress([]byte{4}): &dataCopy{},
 }
 
@@ -57,7 +58,7 @@ func RunPrecompiledContract(p PrecompiledContract, input []byte, contract *Contr
 // ECRECOVER implemented as a native contract
 type ecrecover struct{}
 
-func (c *ecrecover) RequiredGas(inputSize int) *big.Int {
+func (c *ecrecover) RequiredGas(inputSize int) uint64 {
 	return params.EcrecoverGas
 }
 
@@ -90,37 +91,45 @@ func (c *ecrecover) Run(in []byte) []byte {
 }
 
 // SHA256 implemented as a native contract
-type sha256 struct{}
+type sha256hash struct{}
 
-func (c *sha256) RequiredGas(inputSize int) *big.Int {
-	n := big.NewInt(int64(inputSize+31) / 32)
-	n.Mul(n, params.Sha256WordGas)
-	return n.Add(n, params.Sha256Gas)
+// RequiredGas returns the gas required to execute the pre-compiled contract.
+//
+// This method does not require any overflow checking as the input size gas costs
+// required for anything significant is so high it's impossible to pay for.
+func (c *sha256hash) RequiredGas(inputSize int) uint64 {
+	return uint64(inputSize+31)/32*params.Sha256WordGas + params.Sha256Gas
 }
-func (c *sha256) Run(in []byte) []byte {
-	return crypto.Sha256(in)
+func (c *sha256hash) Run(in []byte) []byte {
+	h := sha256.Sum256(in)
+	return h[:]
 }
 
 // RIPMED160 implemented as a native contract
-type ripemd160 struct{}
+type ripemd160hash struct{}
 
-func (c *ripemd160) RequiredGas(inputSize int) *big.Int {
-	n := big.NewInt(int64(inputSize+31) / 32)
-	n.Mul(n, params.Ripemd160WordGas)
-	return n.Add(n, params.Ripemd160Gas)
+// RequiredGas returns the gas required to execute the pre-compiled contract.
+//
+// This method does not require any overflow checking as the input size gas costs
+// required for anything significant is so high it's impossible to pay for.
+func (c *ripemd160hash) RequiredGas(inputSize int) uint64 {
+	return uint64(inputSize+31)/32*params.Ripemd160WordGas + params.Ripemd160Gas
 }
-func (c *ripemd160) Run(in []byte) []byte {
-	return common.LeftPadBytes(crypto.Ripemd160(in), 32)
+func (c *ripemd160hash) Run(in []byte) []byte {
+	ripemd := ripemd160.New()
+	ripemd.Write(in)
+	return common.LeftPadBytes(ripemd.Sum(nil), 32)
 }
 
 // data copy implemented as a native contract
 type dataCopy struct{}
 
-func (c *dataCopy) RequiredGas(inputSize int) *big.Int {
-	n := big.NewInt(int64(inputSize+31) / 32)
-	n.Mul(n, params.IdentityWordGas)
-
-	return n.Add(n, params.IdentityGas)
+// RequiredGas returns the gas required to execute the pre-compiled contract.
+//
+// This method does not require any overflow checking as the input size gas costs
+// required for anything significant is so high it's impossible to pay for.
+func (c *dataCopy) RequiredGas(inputSize int) uint64 {
+	return uint64(inputSize+31)/32*params.IdentityWordGas + params.IdentityGas
 }
 func (c *dataCopy) Run(in []byte) []byte {
 	return in
