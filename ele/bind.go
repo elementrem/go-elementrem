@@ -69,7 +69,7 @@ func (b *ContractBackend) PendingCodeAt(ctx context.Context, contract common.Add
 // against the pending block, not the stable head of the chain.
 func (b *ContractBackend) CallContract(ctx context.Context, msg elementrem.CallMsg, blockNum *big.Int) ([]byte, error) {
 	out, err := b.bcapi.Call(ctx, toCallArgs(msg), toBlockNumber(blockNum))
-	return out, err
+	return common.FromHex(out), err
 }
 
 // ContractCall implements bind.ContractCaller executing an Elementrem contract
@@ -77,7 +77,7 @@ func (b *ContractBackend) CallContract(ctx context.Context, msg elementrem.CallM
 // against the pending block, not the stable head of the chain.
 func (b *ContractBackend) PendingCallContract(ctx context.Context, msg elementrem.CallMsg) ([]byte, error) {
 	out, err := b.bcapi.Call(ctx, toCallArgs(msg), rpc.PendingBlockNumber)
-	return out, err
+	return common.FromHex(out), err
 }
 
 func toCallArgs(msg elementrem.CallMsg) eleapi.CallArgs {

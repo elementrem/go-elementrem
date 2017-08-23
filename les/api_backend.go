@@ -88,7 +88,7 @@ func (b *LesApiBackend) GetTd(blockHash common.Hash) *big.Int {
 	return b.ele.blockchain.GetTdByHash(blockHash)
 }
 
-func (b *LesApiBackend) GetEVM(ctx context.Context, msg core.Message, state eleapi.State, header *types.Header, vmCfg vm.Config) (*vm.EVM, func() error, error) {
+func (b *LesApiBackend) GetVMEnv(ctx context.Context, msg core.Message, state eleapi.State, header *types.Header) (*vm.EVM, func() error, error) {
 	stateDb := state.(*light.LightState).Copy()
 	addr := msg.From()
 	from, err := stateDb.GetOrNewStateObject(ctx, addr)
@@ -99,7 +99,7 @@ func (b *LesApiBackend) GetEVM(ctx context.Context, msg core.Message, state elea
 
 	vmstate := light.NewVMState(ctx, stateDb)
 	context := core.NewEVMContext(msg, header, b.ele.blockchain)
-	return vm.NewEVM(context, vmstate, b.ele.chainConfig, vmCfg), vmstate.Error, nil
+	return vm.NewEVM(context, vmstate, b.ele.chainConfig, vm.Config{}), vmstate.Error, nil
 }
 
 func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {

@@ -106,14 +106,14 @@ func (b *EleApiBackend) GetTd(blockHash common.Hash) *big.Int {
 	return b.ele.blockchain.GetTdByHash(blockHash)
 }
 
-func (b *EleApiBackend) GetEVM(ctx context.Context, msg core.Message, state eleapi.State, header *types.Header, vmCfg vm.Config) (*vm.EVM, func() error, error) {
+func (b *EleApiBackend) GetVMEnv(ctx context.Context, msg core.Message, state eleapi.State, header *types.Header) (*vm.EVM, func() error, error) {
 	statedb := state.(EleApiState).state
 	from := statedb.GetOrNewStateObject(msg.From())
 	from.SetBalance(common.MaxBig)
 	vmError := func() error { return nil }
 
 	context := core.NewEVMContext(msg, header, b.ele.BlockChain())
-	return vm.NewEVM(context, statedb, b.ele.chainConfig, vmCfg), vmError, nil
+	return vm.NewEVM(context, statedb, b.ele.chainConfig, vm.Config{}), vmError, nil
 }
 
 func (b *EleApiBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {
