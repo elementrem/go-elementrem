@@ -10,8 +10,8 @@
 * [Go lang](https://golang.org/dl/)   
 Ubuntu, for instance    
 ```
-wget https://storage.googleapis.com/golang/go1.8.linux-amd64.tar.gz
-sudo tar -zxvf go1.8.linux-amd64.tar.gz -C /usr/local/
+wget https://storage.googleapis.com/golang/go1.10.2.linux-amd64.tar.gz
+sudo tar -zxvf go1.10.2.linux-amd64.tar.gz -C /usr/local/
 mkdir ~/go
 export GOROOT=/usr/local/go
 export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
