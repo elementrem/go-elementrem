@@ -157,9 +157,9 @@ func doInstall(cmdline []string) {
 
 	// Check Go version. People regularly open issues about compilation
 	// failure with outdated Go. This should save them the trouble.
-	if runtime.Version() < "go1.8" && !strings.HasPrefix(runtime.Version(), "devel") {
+	if runtime.Version() < "go1." && !strings.HasPrefix(runtime.Version(), "devel") {
 		log.Println("You have Go version", runtime.Version())
-		log.Println("go-elementrem requires at least Go version 1.8 and cannot")
+		log.Println("go-elementrem requires at least Go version and cannot")
 		log.Println("be compiled with an earlier version. Please upgrade your Go installation.")
 		os.Exit(1)
 	}
@@ -238,9 +238,9 @@ func goToolArch(arch string, subcmd string, args ...string) *exec.Cmd {
 	cmd.Args = append(cmd.Args, args...)
 
 	if subcmd == "build" || subcmd == "install" || subcmd == "test" {
-		// Go CGO has a Windows linker error prior to 1.8 (https://github.com/golang/go/issues/8756).
-		// Work around issue by allowing multiple definitions for <1.8 builds.
-		if runtime.GOOS == "windows" && runtime.Version() < "go1.8" {
+		// Go CGO has a Windows linker error prior to 1.
+		// Work around issue by allowing multiple definitions for <1. builds.
+		if runtime.GOOS == "windows" && runtime.Version() < "go1." {
 			cmd.Args = append(cmd.Args, []string{"-ldflags", "-extldflags -Wl,--allow-multiple-definition"}...)
 		}
 	}
