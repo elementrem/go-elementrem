@@ -11,7 +11,7 @@ import (
 var stringToNumberParseInteger = regexp.MustCompile(`^(?:0[xX])`)
 
 func parseNumber(value string) float64 {
-	value = strings.Trim(value, builtinString_trim_whitespace)
+	value = strings.TrimSpace(value)
 
 	if value == "" {
 		return 0

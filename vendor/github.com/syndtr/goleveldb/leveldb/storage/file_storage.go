@@ -234,30 +234,14 @@ func (fs *fileStorage) SetMeta(fd FileDesc) (err error) {
 		return
 	}
 	_, err = fmt.Fprintln(w, fsGenName(fd))
-	if err != nil {
-		fs.log(fmt.Sprintf("write CURRENT.%d: %v", fd.Num, err))
-		return
-	}
-	if err = w.Sync(); err != nil {
-		fs.log(fmt.Sprintf("flush CURRENT.%d: %v", fd.Num, err))
-		return
-	}
-	if err = w.Close(); err != nil {
-		fs.log(fmt.Sprintf("close CURRENT.%d: %v", fd.Num, err))
-		return
+	// Close the file first.
+	if cerr := w.Close(); cerr != nil {
+		fs.log(fmt.Sprintf("close CURRENT.%d: %v", fd.Num, cerr))
 	}
 	if err != nil {
 		return
 	}
-	if err = rename(path, filepath.Join(fs.path, "CURRENT")); err != nil {
-		fs.log(fmt.Sprintf("rename CURRENT.%d: %v", fd.Num, err))
-		return
-	}
-	// Sync root directory.
-	if err = syncDir(fs.path); err != nil {
-		fs.log(fmt.Sprintf("syncDir: %v", err))
-	}
-	return
+	return rename(path, filepath.Join(fs.path, "CURRENT"))
 }
 
 func (fs *fileStorage) GetMeta() (fd FileDesc, err error) {

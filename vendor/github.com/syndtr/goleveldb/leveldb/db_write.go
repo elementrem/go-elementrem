@@ -7,7 +7,6 @@
 package leveldb
 
 import (
-	"sync/atomic"
 	"time"
 
 	"github.com/syndtr/goleveldb/leveldb/memdb"
@@ -33,24 +32,15 @@ func (db *DB) writeJournal(batches []*Batch, seq uint64, sync bool) error {
 }
 
 func (db *DB) rotateMem(n int, wait bool) (mem *memDB, err error) {
-	retryLimit := 3
-retry:
 	// Wait for pending memdb compaction.
 	err = db.compTriggerWait(db.mcompCmdC)
 	if err != nil {
 		return
 	}
-	retryLimit--
 
 	// Create new memdb and journal.
 	mem, err = db.newMem(n)
 	if err != nil {
-		if err == errHasFrozenMem {
-			if retryLimit <= 0 {
-				panic("BUG: still has frozen memdb")
-			}
-			goto retry
-		}
 		return
 	}
 
@@ -89,11 +79,7 @@ func (db *DB) flush(n int) (mdb *memDB, mdbFree int, err error) {
 			return false
 		case tLen >= pauseTrigger:
 			delayed = true
-			// Set the write paused flag explicitly.
-			atomic.StoreInt32(&db.inWritePaused, 1)
 			err = db.compTriggerWait(db.tcompCmdC)
-			// Unset the write paused flag.
-			atomic.StoreInt32(&db.inWritePaused, 0)
 			if err != nil {
 				return false
 			}
@@ -122,8 +108,6 @@ func (db *DB) flush(n int) (mdb *memDB, mdbFree int, err error) {
 		db.writeDelayN++
 	} else if db.writeDelayN > 0 {
 		db.logf("db@write was delayed N·%d T·%v", db.writeDelayN, db.writeDelay)
-		atomic.AddInt32(&db.cWriteDelayN, int32(db.writeDelayN))
-		atomic.AddInt64(&db.cWriteDelay, int64(db.writeDelay))
 		db.writeDelay = 0
 		db.writeDelayN = 0
 	}
@@ -150,7 +134,7 @@ func (db *DB) unlockWrite(overflow bool, merged int, err error) {
 	}
 }
 
-// ourBatch is batch that we can modify.
+// ourBatch if defined should equal with batch.
 func (db *DB) writeLocked(batch, ourBatch *Batch, merge, sync bool) error {
 	// Try to flush memdb. This method would also trying to throttle writes
 	// if it is too fast and compaction cannot catch-up.
@@ -217,11 +201,6 @@ func (db *DB) writeLocked(batch, ourBatch *Batch, merge, sync bool) error {
 				break merge
 			}
 		}
-	}
-
-	// Release ourBatch if any.
-	if ourBatch != nil {
-		defer db.batchPool.Put(ourBatch)
 	}
 
 	// Seq number.
