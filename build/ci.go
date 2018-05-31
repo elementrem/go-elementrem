@@ -159,7 +159,7 @@ func doInstall(cmdline []string) {
 	// failure with outdated Go. This should save them the trouble.
 	if runtime.Version() < "go1.8" && !strings.HasPrefix(runtime.Version(), "devel") {
 		log.Println("You have Go version", runtime.Version())
-		log.Println("go-elementrem requires at least Go version 1.8 and cannot")
+		log.Println("go-elementrem requires at least Go version 1.8x & 1.9x (1.10.x is not supported.)and cannot")
 		log.Println("be compiled with an earlier version. Please upgrade your Go installation.")
 		os.Exit(1)
 	}
